@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="fr" class="dark">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Mini App Catalogue Premium</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GIO Shop</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -21,97 +21,87 @@
           good: '#2EE59D',
           bad: '#FF4D4D',
         },
-        borderRadius: {
-          xl2: '18px',
-          xl3: '24px',
-          xl4: '28px'
-        },
-        fontFamily: {
-          ui: ['ui-sans-serif','system-ui','-apple-system','"SF Pro Display"','"SF Pro Text"','Segoe UI','Roboto','Helvetica','Arial','"Apple Color Emoji"','"Segoe UI Emoji"']
-        }
+        borderRadius: { xl2:'18px', xl3:'24px', xl4:'28px' },
+        fontFamily: { ui:['ui-sans-serif','system-ui','-apple-system','"SF Pro Display"','"SF Pro Text"','Segoe UI','Roboto','Helvetica','Arial','"Apple Color Emoji"','"Segoe UI Emoji"'] }
       }
     }
   }
 </script>
 </head>
-<body class="min-h-screen font-ui bg-bg0 text-text px-4 py-4">
+<body class="min-h-screen font-ui bg-bg0 text-text pt-24">
 
-<!-- HEADER -->
-<header class="mb-6">
-  <h1 class="text-3xl font-extrabold mb-2">Catalogue Mini App</h1>
-  <input id="search" type="search" placeholder="Recherche produit/provenance"
-         class="mt-2 w-full rounded-xl2 border border-white/10 bg-bg1 px-4 py-2 text-text outline-none placeholder:text-muted"/>
+<!-- HEADER FIXE -->
+<header class="fixed top-0 left-0 right-0 bg-bg1 border-b border-white/10 p-4 flex flex-col items-center z-50">
+  <h1 class="text-3xl font-extrabold">GIO Shop</h1>
+  <p class="text-sm text-muted mb-2">La Cali avant tout</p>
+  <div class="flex gap-2">
+    <input type="search" id="search" placeholder="Rechercher..." class="rounded-xl2 px-3 py-2 bg-bg0/80 border border-white/10 placeholder:text-muted focus:outline-none">
+    <button data-filter="salade" class="px-3 py-2 rounded-xl2 bg-accent font-black text-black">Salade</button>
+    <button data-filter="chocolat" class="px-3 py-2 rounded-xl2 bg-accent font-black text-black">Chocolat</button>
+  </div>
 </header>
 
 <!-- CATALOGUE -->
-<section id="catalogue" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"></section>
+<section id="catalogue" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 px-4"></section>
 
 <!-- DRAWER PANIER -->
-<div id="drawerBackdrop" class="fixed inset-0 bg-black/50 hidden"></div>
-<div id="drawer" class="fixed right-0 top-0 h-full w-80 bg-bg1 shadow-xl transform translate-x-full transition-transform duration-300 flex flex-col">
+<div id="drawerBackdrop" class="fixed inset-0 bg-black/50 hidden z-40"></div>
+<div id="drawer" class="fixed right-0 top-0 h-full w-96 bg-bg1 shadow-xl transform translate-x-full transition-transform duration-300 flex flex-col z-50">
   <div class="flex justify-between items-center p-4 border-b border-white/10">
     <h2 class="font-black text-xl">Panier</h2>
     <button id="closeDrawer" class="text-text font-black text-lg">&times;</button>
   </div>
   <div id="drawerContent" class="p-4 flex-1 overflow-y-auto space-y-3"></div>
-  <div class="p-4 border-t border-white/10">
-    <div id="drawerTotal" class="font-black text-lg mb-3">Total : 0 €</div>
-    <button id="clearCart" class="w-full mb-2 px-4 py-2 rounded-xl2 border border-white/10 bg-white/5 text-text font-black">Vider le panier</button>
-    <button id="copyCart" class="w-full px-4 py-2 rounded-xl2 border border-white/10 bg-accent text-black font-black">Copier le panier</button>
+  <div class="p-4 border-t border-white/10 space-y-3">
+    <div class="space-y-2">
+      <input type="text" id="customerName" placeholder="Nom" class="w-full px-3 py-2 rounded-xl2 bg-bg0/50 border border-white/10 text-text placeholder:text-muted">
+      <input type="text" id="customerAddress" placeholder="Adresse de livraison" class="w-full px-3 py-2 rounded-xl2 bg-bg0/50 border border-white/10 text-text placeholder:text-muted">
+    </div>
+    <div id="drawerTotal" class="font-black text-lg">Total : 0 €</div>
+    <button id="sendOrder" class="w-full px-4 py-2 rounded-xl2 border border-white/10 bg-accent text-black font-black">Envoyer la commande</button>
+    <button id="clearCart" class="w-full px-4 py-2 rounded-xl2 border border-white/10 bg-white/5 text-text font-black">Vider le panier</button>
   </div>
 </div>
 
-<!-- OUVRIR LE DRAWER -->
-<button id="openDrawer" class="fixed bottom-6 right-6 bg-accent text-black px-4 py-3 rounded-xl4 font-black shadow-lg">Panier</button>
+<!-- BOUTON OUVRIR DRAWER -->
+<button id="openDrawer" class="fixed bottom-6 right-6 bg-accent text-black px-4 py-3 rounded-xl4 font-black shadow-lg z-50">Panier</button>
 
 <script>
 /* ==============================
    DONNÉES PRODUITS
-   ============================== */
+============================== */
 const PRODUCTS = [
-  {id:"P01",name:"Mousseux",origin:"🇲🇦",price:10},
-  {id:"P02",name:"Static",origin:"🇲🇦",price:12},
-  {id:"P03",name:"Frozen",origin:"🇲🇦",price:15},
-  {id:"P04",name:"Beldia",origin:"🇲🇦",price:12},
-  {id:"P05",name:"Produit 05",origin:"🇳🇱",price:8},
-  {id:"P06",name:"Produit 06",origin:"🇳🇱",price:11},
-  {id:"P07",name:"Cali Plates",origin:"🇺🇸",price:20},
-  {id:"P08",name:"Cali NL",origin:"🇳🇱",price:10},
-  {id:"P09",name:"Cali US",origin:"🇺🇸",price:22},
-  {id:"P10",name:"Produit 10",origin:"🇺🇸",price:18},
-  {id:"P11",name:"Cali Canadienne",origin:"🇨🇦",price:12},
+  {id:"P01",name:"Mousseux",thc:18,origin:"🇲🇦",price:10},
+  {id:"P02",name:"Static",thc:22,origin:"🇲🇦",price:12},
+  {id:"P03",name:"Frozen",thc:25,origin:"🇲🇦",price:15},
+  {id:"P04",name:"Beldia",thc:20,origin:"🇲🇦",price:12},
+  {id:"P05",name:"Produit 05",thc:17,origin:"🇳🇱",price:8},
+  {id:"P06",name:"Produit 06",thc:19,origin:"🇳🇱",price:11},
+  {id:"P07",name:"Cali Plates",thc:23,origin:"🇺🇸",price:20},
+  {id:"P08",name:"Cali NL",thc:21,origin:"🇳🇱",price:10},
+  {id:"P09",name:"Cali US",thc:24,origin:"🇺🇸",price:22},
+  {id:"P10",name:"Produit 10",thc:20,origin:"🇺🇸",price:18},
+  {id:"P11",name:"Cali Canadienne",thc:18,origin:"🇨🇦",price:12},
 ];
 
 /* ==============================
    STATE
-   ============================== */
-let state = {
-  cart: loadCart(),
-  query: ""
-};
+============================== */
+let state = { cart: {}, query:"" };
 
 /* ==============================
    HELPERS
-   ============================== */
-function loadCart(){
-  try{
-    const c=JSON.parse(localStorage.getItem('mini_cart'));
-    return c&&typeof c==='object'?c:{};
-  }catch(e){return {};}
-}
-function saveCart(){
-  localStorage.setItem('mini_cart',JSON.stringify(state.cart));
-}
+============================== */
 function money(n){return Number(n||0).toFixed(2)+' €';}
 
 /* ==============================
    RENDER CATALOGUE
-   ============================== */
+============================== */
 const catalogueEl = document.getElementById('catalogue');
 function renderCatalogue(){
   const q = state.query.toLowerCase();
-  catalogueEl.innerHTML = '';
-  const filtered = PRODUCTS.filter(p=>p.name.toLowerCase().includes(q)||p.origin.toLowerCase().includes(q));
+  catalogueEl.innerHTML='';
+  const filtered = PRODUCTS.filter(p => p.name.toLowerCase().includes(q) || p.origin.toLowerCase().includes(q));
   if(filtered.length===0){
     catalogueEl.innerHTML='<div class="text-muted text-center col-span-full">Aucun produit trouvé.</div>';
     return;
@@ -127,13 +117,12 @@ function renderCatalogue(){
       <div class="flex justify-between items-start mb-3">
         <div>
           <div class="font-black text-lg">${p.name}</div>
-          <div class="text-sm text-muted">${p.origin}</div>
-          <div class="text-sm font-black mt-1">${money(p.price)} / unité</div>
+          <div class="text-sm text-muted">${p.thc}% THC • ${p.origin}</div>
+          <div class="text-sm font-black mt-1">${money(p.price)} / g</div>
         </div>
         <div class="text-sm font-black text-muted">${qty>0?qty+'×':''}</div>
       </div>
 
-      <!-- SLIDER GRAMMES -->
       <div class="mb-3">
         <label for="slider-${p.id}" class="text-sm text-muted font-black">Grammes : <span id="sliderVal-${p.id}" class="text-accent">${grams}</span>g</label>
         <input id="slider-${p.id}" type="range" min="1" max="10" value="${grams}" class="w-full h-2 bg-white/10 rounded-xl2 accent-accent">
@@ -143,18 +132,15 @@ function renderCatalogue(){
     `;
     catalogueEl.appendChild(card);
 
-    // Slider interaction
     const slider = card.querySelector(`#slider-${p.id}`);
     const sliderVal = card.querySelector(`#sliderVal-${p.id}`);
-    slider.addEventListener('input', e => {
-      sliderVal.textContent = e.target.value;
-    });
+    slider.addEventListener('input', e => sliderVal.textContent=e.target.value);
   });
 }
 
 /* ==============================
    HANDLE ACTIONS
-   ============================== */
+============================== */
 catalogueEl.addEventListener('click', e=>{
   const btn = e.target.closest('button');
   if(!btn) return;
@@ -166,29 +152,25 @@ catalogueEl.addEventListener('click', e=>{
   const grams = Number(slider?.value || 1);
 
   if(act==='add'){
-    if(state.cart[id]){
-      state.cart[id].qty += 1;
-      state.cart[id].grams = grams;
-    } else {
-      state.cart[id] = {qty:1, grams};
-    }
+    if(state.cart[id]){ state.cart[id].qty +=1; state.cart[id].grams = grams; }
+    else{ state.cart[id] = {qty:1, grams}; }
   }
-  saveCart();
-  renderCatalogue();
   renderDrawer();
 });
 
 /* ==============================
    SEARCH
-   ============================== */
-document.getElementById('search').addEventListener('input',e=>{
-  state.query=e.target.value;
+============================== */
+document.getElementById('search').addEventListener('input', e=>{state.query=e.target.value; renderCatalogue();});
+document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click', e=>{
+  state.query = btn.dataset.filter;
+  document.getElementById('search').value = btn.dataset.filter;
   renderCatalogue();
-});
+}));
 
 /* ==============================
-   RENDER DRAWER
-   ============================== */
+   DRAWER
+============================== */
 const drawer = document.getElementById('drawer');
 const drawerBackdrop = document.getElementById('drawerBackdrop');
 const drawerContent = document.getElementById('drawerContent');
@@ -197,16 +179,11 @@ const drawerTotal = document.getElementById('drawerTotal');
 function renderDrawer(){
   drawerContent.innerHTML='';
   const items = Object.entries(state.cart);
-  if(items.length===0){
-    drawerContent.innerHTML='<div class="text-muted text-center">Panier vide</div>';
-    drawerTotal.textContent = 'Total : 0 €';
-    return;
-  }
+  if(items.length===0){ drawerContent.innerHTML='<div class="text-muted text-center">Panier vide</div>'; drawerTotal.textContent='Total : 0 €'; return; }
 
-  let total = 0;
-  items.forEach(([id, {qty, grams}])=>{
+  let total=0;
+  items.forEach(([id,{qty,grams}])=>{
     const p = PRODUCTS.find(x=>x.id===id);
-    if(!p) return;
     const lineTotal = p.price * qty * grams;
     total += lineTotal;
 
@@ -222,48 +199,49 @@ function renderDrawer(){
     drawerContent.appendChild(itemEl);
   });
 
-  drawerTotal.textContent = `Total : ${money(total)}`;
+  drawerTotal.textContent=`Total : ${money(total)}`;
 }
 
-/* ==============================
-   DRAWER TOGGLE
-   ============================== */
-document.getElementById('openDrawer').addEventListener('click', ()=>{
-  drawer.classList.remove('translate-x-full');
-  drawerBackdrop.classList.remove('hidden');
-});
+document.getElementById('openDrawer').addEventListener('click', ()=>{drawer.classList.remove('translate-x-full'); drawerBackdrop.classList.remove('hidden');});
 document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
 drawerBackdrop.addEventListener('click', closeDrawer);
-
-function closeDrawer(){
-  drawer.classList.add('translate-x-full');
-  drawerBackdrop.classList.add('hidden');
-}
+function closeDrawer(){ drawer.classList.add('translate-x-full'); drawerBackdrop.classList.add('hidden');}
 
 /* ==============================
-   CLEAR / COPY
-   ============================== */
-document.getElementById('clearCart').addEventListener('click',()=>{
+   CLEAR / SEND ORDER
+============================== */
+document.getElementById('clearCart').addEventListener('click', ()=>{
   state.cart={};
-  saveCart();
   renderCatalogue();
   renderDrawer();
 });
 
-document.getElementById('copyCart').addEventListener('click',()=>{
-  const lines = Object.entries(state.cart).map(([id,{qty,grams}])=>{
+document.getElementById('sendOrder').addEventListener('click', ()=>{
+  const name = document.getElementById('customerName').value.trim();
+  const address = document.getElementById('customerAddress').value.trim();
+  if(!name||!address){ alert('Veuillez remplir nom et adresse'); return; }
+
+  const items = Object.entries(state.cart).map(([id,{qty,grams}])=>{
     const p = PRODUCTS.find(x=>x.id===id);
     return `${p.name} ${grams}g ×${qty} = ${money(p.price*qty*grams)}`;
   }).join('\n');
-  navigator.clipboard.writeText(lines || 'Panier vide').then(()=>alert('Panier copié !'));
-});
 
+  const total = Object.entries(state.cart).reduce((sum,[id,{qty,grams}])=>{
+    const p = PRODUCTS.find(x=>x.id===id);
+    return sum + p.price*qty*grams;
+  },0);
+
+  const message = `Commande GIO Shop\nNom: ${name}\nAdresse: ${address}\n\n${items}\nTotal: ${money(total)}`;
+
+  // Telegram link (remplacer <USERNAME> par ton compte)
+  const telegramUrl = `https://t.me/<USERNAME>?text=${encodeURIComponent(message)}`;
+  window.open(telegramUrl,'_blank');
+});
 /* ==============================
    INITIALIZE
-   ============================== */
+============================== */
 renderCatalogue();
 renderDrawer();
 </script>
-
 </body>
 </html>
