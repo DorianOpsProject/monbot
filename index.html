@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Mini App Catalogue</title>
+<title>Mini App Catalogue Premium</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -34,37 +34,35 @@
   }
 </script>
 </head>
-<body class="min-h-screen font-ui bg-bg0 text-text px-4 py-4 overflow-x-hidden">
+<body class="min-h-screen font-ui bg-bg0 text-text px-4 py-4">
 
 <!-- HEADER -->
-<header class="mb-4">
-  <h1 class="text-2xl font-black">Catalogue Mini App</h1>
+<header class="mb-6">
+  <h1 class="text-3xl font-extrabold mb-2">Catalogue Mini App</h1>
   <input id="search" type="search" placeholder="Recherche produit/provenance"
-         class="mt-2 w-full rounded-xl2 border border-white/10 bg-bg1 px-3 py-2 text-text outline-none"/>
+         class="mt-2 w-full rounded-xl2 border border-white/10 bg-bg1 px-4 py-2 text-text outline-none placeholder:text-muted"/>
 </header>
 
 <!-- CATALOGUE -->
-<section id="catalogue" class="grid gap-3"></section>
+<section id="catalogue" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"></section>
 
 <!-- DRAWER PANIER -->
-<div id="cartDrawer" class="fixed top-0 right-[-100%] w-80 h-full bg-bg1 border-l border-white/10 shadow-lg transition-all duration-300 z-50 flex flex-col">
-  <div class="p-4 border-b border-white/10 flex justify-between items-center">
-    <div class="font-black text-lg">Panier</div>
-    <button id="closeCart" class="text-accent font-black">✕</button>
+<div id="drawerBackdrop" class="fixed inset-0 bg-black/50 hidden"></div>
+<div id="drawer" class="fixed right-0 top-0 h-full w-80 bg-bg1 shadow-xl transform translate-x-full transition-transform duration-300 flex flex-col">
+  <div class="flex justify-between items-center p-4 border-b border-white/10">
+    <h2 class="font-black text-xl">Panier</h2>
+    <button id="closeDrawer" class="text-text font-black text-lg">&times;</button>
   </div>
-  <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+  <div id="drawerContent" class="p-4 flex-1 overflow-y-auto space-y-3"></div>
   <div class="p-4 border-t border-white/10">
-    <div class="flex justify-between font-black mb-2">
-      <span>Total</span>
-      <span id="cartTotal">0 €</span>
-    </div>
-    <button id="copyCart" class="w-full py-2 rounded-xl2 bg-accent text-black font-black mb-2">Copier le panier</button>
-    <button id="clearCart" class="w-full py-2 rounded-xl2 border border-white/10 bg-white/5 text-text font-black">Vider le panier</button>
+    <div id="drawerTotal" class="font-black text-lg mb-3">Total : 0 €</div>
+    <button id="clearCart" class="w-full mb-2 px-4 py-2 rounded-xl2 border border-white/10 bg-white/5 text-text font-black">Vider le panier</button>
+    <button id="copyCart" class="w-full px-4 py-2 rounded-xl2 border border-white/10 bg-accent text-black font-black">Copier le panier</button>
   </div>
 </div>
 
-<!-- BUTTON TO OPEN CART -->
-<button id="openCart" class="fixed bottom-4 right-4 bg-accent px-4 py-3 rounded-full font-black shadow-lg z-40">Panier</button>
+<!-- OUVRIR LE DRAWER -->
+<button id="openDrawer" class="fixed bottom-6 right-6 bg-accent text-black px-4 py-3 rounded-xl4 font-black shadow-lg">Panier</button>
 
 <script>
 /* ==============================
@@ -89,8 +87,7 @@ const PRODUCTS = [
    ============================== */
 let state = {
   cart: loadCart(),
-  query:"",
-  weightSelection: {} // id -> grammes
+  query: ""
 };
 
 /* ==============================
@@ -116,189 +113,157 @@ function renderCatalogue(){
   catalogueEl.innerHTML = '';
   const filtered = PRODUCTS.filter(p=>p.name.toLowerCase().includes(q)||p.origin.toLowerCase().includes(q));
   if(filtered.length===0){
-    catalogueEl.innerHTML='<div class="text-muted text-center">Aucun produit trouvé.</div>';
+    catalogueEl.innerHTML='<div class="text-muted text-center col-span-full">Aucun produit trouvé.</div>';
     return;
   }
+
   filtered.forEach(p=>{
-    const qty = state.cart[p.id]?.qty||0;
-    const weight = state.weightSelection[p.id] || 1;
+    const qty = state.cart[p.id]?.qty || 0;
+    const grams = state.cart[p.id]?.grams || 1;
+
     const card = document.createElement('div');
-    card.className='bg-bg1 border border-white/10 rounded-xl3 p-4 flex flex-col gap-3';
+    card.className='bg-bg1 border border-white/10 rounded-xl3 p-4 flex flex-col justify-between shadow-sm';
     card.innerHTML=`
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-start mb-3">
         <div>
           <div class="font-black text-lg">${p.name}</div>
           <div class="text-sm text-muted">${p.origin}</div>
+          <div class="text-sm font-black mt-1">${money(p.price)} / unité</div>
         </div>
-        <div class="text-sm font-black">${money((p.price/1)*weight)} / ${weight}g</div>
+        <div class="text-sm font-black text-muted">${qty>0?qty+'×':''}</div>
       </div>
-      <input type="range" min="1" max="100" value="${weight}" data-id="${p.id}" class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider-thumb">
-      <div class="flex justify-between items-center">
-        <button data-act="add" data-id="${p.id}" class="px-3 py-2 rounded-xl2 border border-white/10 bg-accent text-black font-black flex-1 mr-2">
-          Ajouter au panier
-        </button>
-        <span class="font-black text-text">${qty} pcs</span>
+
+      <!-- SLIDER GRAMMES -->
+      <div class="mb-3">
+        <label for="slider-${p.id}" class="text-sm text-muted font-black">Grammes : <span id="sliderVal-${p.id}" class="text-accent">${grams}</span>g</label>
+        <input id="slider-${p.id}" type="range" min="1" max="10" value="${grams}" class="w-full h-2 bg-white/10 rounded-xl2 accent-accent">
       </div>
+
+      <button data-act="add" data-id="${p.id}" class="mt-2 w-full px-3 py-2 rounded-xl2 border border-white/10 bg-accent text-black font-black">Ajouter</button>
     `;
     catalogueEl.appendChild(card);
+
+    // Slider interaction
+    const slider = card.querySelector(`#slider-${p.id}`);
+    const sliderVal = card.querySelector(`#sliderVal-${p.id}`);
+    slider.addEventListener('input', e => {
+      sliderVal.textContent = e.target.value;
+    });
   });
 }
 
 /* ==============================
    HANDLE ACTIONS
    ============================== */
-catalogueEl.addEventListener('click',e=>{
-  const btn=e.target.closest('button');
-  if(btn){
-    const act = btn.dataset.act;
-    const id = btn.dataset.id;
-    if(act==='add' && id){
-      const weight = state.weightSelection[id] || 1;
-      const current = state.cart[id]?.qty || 0;
-      const totalPrice = (state.cart[id]?.price || 0) + (PRODUCTS.find(p=>p.id===id).price * weight /1);
-      state.cart[id] = { qty: current + 1, price: totalPrice };
-      saveCart();
-      renderCatalogue();
-      renderCart();
+catalogueEl.addEventListener('click', e=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  const act = btn.dataset.act;
+  const id = btn.dataset.id;
+  if(!id) return;
+
+  const slider = document.getElementById(`slider-${id}`);
+  const grams = Number(slider?.value || 1);
+
+  if(act==='add'){
+    if(state.cart[id]){
+      state.cart[id].qty += 1;
+      state.cart[id].grams = grams;
+    } else {
+      state.cart[id] = {qty:1, grams};
     }
   }
-});
-
-catalogueEl.addEventListener('input', e=>{
-  if(e.target.type==='range'){
-    const id = e.target.dataset.id;
-    state.weightSelection[id] = parseInt(e.target.value);
-    renderCatalogue();
-  }
+  saveCart();
+  renderCatalogue();
+  renderDrawer();
 });
 
 /* ==============================
    SEARCH
    ============================== */
-document.getElementById('search').addEventListener('input', e=>{
+document.getElementById('search').addEventListener('input',e=>{
   state.query=e.target.value;
   renderCatalogue();
 });
 
 /* ==============================
-   RENDER CART
+   RENDER DRAWER
    ============================== */
-const cartItemsEl = document.getElementById('cartItems');
-const cartTotalEl = document.getElementById('cartTotal');
+const drawer = document.getElementById('drawer');
+const drawerBackdrop = document.getElementById('drawerBackdrop');
+const drawerContent = document.getElementById('drawerContent');
+const drawerTotal = document.getElementById('drawerTotal');
 
-function renderCart(){
-  cartItemsEl.innerHTML='';
+function renderDrawer(){
+  drawerContent.innerHTML='';
   const items = Object.entries(state.cart);
   if(items.length===0){
-    cartItemsEl.innerHTML='<div class="text-muted text-center mt-4">Panier vide</div>';
-    cartTotalEl.textContent='0 €';
+    drawerContent.innerHTML='<div class="text-muted text-center">Panier vide</div>';
+    drawerTotal.textContent = 'Total : 0 €';
     return;
   }
-  let total=0;
-  items.forEach(([id,data])=>{
+
+  let total = 0;
+  items.forEach(([id, {qty, grams}])=>{
     const p = PRODUCTS.find(x=>x.id===id);
-    if(p){
-      total+=data.price;
-      const line = document.createElement('div');
-      line.className='flex justify-between items-center border-b border-white/10 pb-2';
-      line.innerHTML=`
-        <div>
-          <div class="font-black">${p.name} ×${data.qty}</div>
-          <div class="text-sm text-muted">${data.price.toFixed(2)} €</div>
-        </div>
-        <button data-id="${id}" class="text-red-500 font-black">✕</button>
-      `;
-      cartItemsEl.appendChild(line);
-    }
+    if(!p) return;
+    const lineTotal = p.price * qty * grams;
+    total += lineTotal;
+
+    const itemEl = document.createElement('div');
+    itemEl.className='flex justify-between items-center bg-bg0/20 p-3 rounded-xl2';
+    itemEl.innerHTML=`
+      <div>
+        <div class="font-black">${p.name}</div>
+        <div class="text-sm text-muted">${grams}g × ${qty}</div>
+      </div>
+      <div class="font-black">${money(lineTotal)}</div>
+    `;
+    drawerContent.appendChild(itemEl);
   });
-  cartTotalEl.textContent = money(total);
+
+  drawerTotal.textContent = `Total : ${money(total)}`;
 }
 
 /* ==============================
-   REMOVE ITEM CART
+   DRAWER TOGGLE
    ============================== */
-cartItemsEl.addEventListener('click', e=>{
-  const btn = e.target.closest('button');
-  if(btn){
-    const id = btn.dataset.id;
-    if(id){
-      delete state.cart[id];
-      saveCart();
-      renderCart();
-      renderCatalogue();
-    }
-  }
+document.getElementById('openDrawer').addEventListener('click', ()=>{
+  drawer.classList.remove('translate-x-full');
+  drawerBackdrop.classList.remove('hidden');
 });
+document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
+drawerBackdrop.addEventListener('click', closeDrawer);
+
+function closeDrawer(){
+  drawer.classList.add('translate-x-full');
+  drawerBackdrop.classList.add('hidden');
+}
 
 /* ==============================
-   OPEN/CLOSE DRAWER
-   ============================== */
-document.getElementById('openCart').addEventListener('click',()=>{
-  document.getElementById('cartDrawer').style.right='0';
-});
-document.getElementById('closeCart').addEventListener('click',()=>{
-  document.getElementById('cartDrawer').style.right='-100%';
-});
-
-/* ==============================
-   CLEAR / COPY CART
+   CLEAR / COPY
    ============================== */
 document.getElementById('clearCart').addEventListener('click',()=>{
   state.cart={};
   saveCart();
-  renderCart();
   renderCatalogue();
+  renderDrawer();
 });
+
 document.getElementById('copyCart').addEventListener('click',()=>{
-  let text = '';
-  Object.entries(state.cart).forEach(([id,data])=>{
+  const lines = Object.entries(state.cart).map(([id,{qty,grams}])=>{
     const p = PRODUCTS.find(x=>x.id===id);
-    if(p) text+=`${p.name} ×${data.qty} = ${data.price.toFixed(2)} €\n`;
-  });
-  if(!text) text='Panier vide';
-  navigator.clipboard.writeText(text).then(()=>alert('Panier copié !'));
+    return `${p.name} ${grams}g ×${qty} = ${money(p.price*qty*grams)}`;
+  }).join('\n');
+  navigator.clipboard.writeText(lines || 'Panier vide').then(()=>alert('Panier copié !'));
 });
 
 /* ==============================
    INITIALIZE
    ============================== */
 renderCatalogue();
-renderCart();
+renderDrawer();
 </script>
-
-<style>
-/* CUSTOM SLIDER */
-input[type=range].slider-thumb::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #FFD400;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 0 2px rgba(0,0,0,0.5);
-}
-input[type=range].slider-thumb::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #FFD400;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 0 2px rgba(0,0,0,0.5);
-}
-input[type=range]::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255,255,255,0.2);
-}
-input[type=range]::-moz-range-track {
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255,255,255,0.2);
-}
-</style>
 
 </body>
 </html>
