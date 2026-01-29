@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Nebula Market — Catalogue</title>
+<title>Mini App — Catalogue</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -14,129 +14,165 @@ colors:{
 bg0:'#070916',bg1:'#0C1024',glass:'rgba(255,255,255,.05)',
 stroke:'rgba(255,255,255,.08)',text:'rgba(240,244,255,.95)',
 muted:'rgba(240,244,255,.6)',accent:'#6EE7FF',
-accent2:'#8B5CF6',good:'#22D3EE',bad:'#FB7185'
-}}}}
+accent2:'#8B5CF6',bad:'#FB7185'
+},
+borderRadius:{xl3:'22px'}
+}}}
 </script>
+
+<style>
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.animate-pop{animation:pop .25s ease-out both}
+</style>
 </head>
 
 <body class="min-h-screen text-text
 bg-[radial-gradient(900px_600px_at_20%_-10%,rgba(139,92,246,.18),transparent_60%),radial-gradient(900px_600px_at_90%_10%,rgba(110,231,255,.18),transparent_55%),linear-gradient(180deg,#070916,#0C1024)]">
 
-<div class="max-w-[920px] mx-auto px-4 pb-32">
+<div class="max-w-[900px] mx-auto px-4 pb-40">
 
+<!-- HEADER -->
 <header class="sticky top-0 z-20 backdrop-blur-xl border-b border-white/10 py-4">
 <h1 class="font-black text-lg">Nebula Market</h1>
-<p class="text-muted text-xs">Catalogue privé</p>
-<input id="search" class="mt-4 w-full rounded-xl px-4 py-3 bg-glass border border-white/10"
+<p class="text-xs text-muted">Catalogue privé</p>
+<input id="search" class="mt-3 w-full rounded-xl3 px-4 py-3 bg-glass border border-white/10"
 placeholder="Rechercher un produit…">
 </header>
 
-<div class="mt-4 flex gap-2 overflow-x-auto text-sm">
-<button class="filter px-4 py-2 rounded-xl bg-glass border border-white/10" data-cat="all">Tous</button>
-<button class="filter px-4 py-2 rounded-xl bg-glass border border-white/10" data-cat="digital">Digital</button>
-<button class="filter px-4 py-2 rounded-xl bg-glass border border-white/10" data-cat="service">Services</button>
+<!-- FILTERS -->
+<div class="flex gap-2 mt-4 text-sm overflow-x-auto">
+<button class="filter px-4 py-2 rounded-xl3 bg-glass border border-white/10" data-cat="all">Tous</button>
+<button class="filter px-4 py-2 rounded-xl3 bg-glass border border-white/10" data-cat="digital">Digital</button>
+<button class="filter px-4 py-2 rounded-xl3 bg-glass border border-white/10" data-cat="service">Services</button>
 </div>
 
-<main id="products" class="grid gap-4 mt-4"></main>
+<!-- PRODUCTS -->
+<main id="list" class="grid gap-4 mt-4"></main>
 
 </div>
 
-<!-- PANIER -->
+<!-- PRODUCT MODAL -->
+<div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-30">
+<div class="bg-bg1 w-full max-w-md rounded-xl3 p-4 animate-pop relative">
+<button onclick="closeModal()" class="absolute top-3 right-3 text-muted">✕</button>
+<img id="modalImg" class="w-full rounded-xl3 mb-3">
+<h3 id="modalTitle" class="font-black"></h3>
+<p id="modalDesc" class="text-sm text-muted mt-1"></p>
+<p id="modalPrice" class="mt-2 font-bold"></p>
+<button id="modalAdd" class="mt-4 w-full bg-gradient-to-br from-accent to-accent2 text-black font-black py-3 rounded-xl3">
+Ajouter au panier
+</button>
+</div>
+</div>
+
+<!-- CART -->
 <div id="cart" class="fixed bottom-0 left-0 right-0 bg-[#0B0F1E]/95 backdrop-blur-xl border-t border-white/10 p-4 hidden">
 <h2 class="font-black">Panier</h2>
-<div id="cartItems" class="mt-2"></div>
-<p class="mt-2 text-sm">Total : <b id="total">0€</b></p>
+<div id="cartItems" class="mt-2 space-y-2 text-sm"></div>
+<p class="mt-3">Total : <b id="total">0€</b></p>
 
-<input id="name" placeholder="Nom" class="mt-3 w-full bg-glass border border-white/10 rounded-xl px-3 py-2">
-<input id="phone" placeholder="Téléphone" class="mt-2 w-full bg-glass border border-white/10 rounded-xl px-3 py-2">
-<textarea id="note" placeholder="Note" class="mt-2 w-full bg-glass border border-white/10 rounded-xl px-3 py-2"></textarea>
+<input id="name" placeholder="Nom" class="mt-3 w-full bg-glass border border-white/10 rounded-xl3 px-3 py-2">
+<input id="phone" placeholder="Téléphone" class="mt-2 w-full bg-glass border border-white/10 rounded-xl3 px-3 py-2">
+<textarea id="note" placeholder="Note" class="mt-2 w-full bg-glass border border-white/10 rounded-xl3 px-3 py-2"></textarea>
 
-<button id="send" class="mt-3 w-full bg-gradient-to-br from-accent to-accent2 text-black font-black py-3 rounded-xl">
+<button onclick="sendOrder()" class="mt-3 w-full bg-gradient-to-br from-accent to-accent2 text-black font-black py-3 rounded-xl3">
 Commander via Telegram
 </button>
 </div>
 
 <script>
-const USERNAME="USERNAME_TELEGRAM";
+const TELEGRAM_USERNAME="TON_USERNAME";
+
 const PRODUCTS=[
-{id:1,name:"Produit Alpha",price:10,cat:"digital",badge:"Nouveau"},
-{id:2,name:"Produit Beta",price:15,cat:"service",badge:"Populaire"},
-{id:3,name:"Produit Gamma",price:20,cat:"digital"}
+{id:1,name:"Produit Alpha",price:10,cat:"digital",desc:"Produit digital premium",img:"https://picsum.photos/600/400?1"},
+{id:2,name:"Produit Beta",price:15,cat:"service",desc:"Service personnalisé",img:"https://picsum.photos/600/400?2"},
+{id:3,name:"Produit Gamma",price:0,cat:"service",desc:"Offre sur devis",img:"https://picsum.photos/600/400?3"}
 ];
 
-let cart=JSON.parse(localStorage.getItem("cart")||"{}");
-let filter="all";
+const state={
+cart:JSON.parse(localStorage.getItem("cart")||"{}"),
+filter:"all"
+};
 
 const $=id=>document.getElementById(id);
 
 function render(){
-$("products").innerHTML="";
-PRODUCTS.filter(p=>
-(filter==="all"||p.cat===filter)&&
-p.name.toLowerCase().includes($("search").value.toLowerCase())
-).forEach(p=>{
-$("products").innerHTML+=`
-<div class="bg-glass border border-white/10 rounded-xl p-4">
-<div class="flex justify-between">
+$("list").innerHTML="";
+PRODUCTS.filter(p=>{
+return (state.filter==="all"||p.cat===state.filter) &&
+p.name.toLowerCase().includes($("search").value.toLowerCase());
+}).forEach(p=>{
+const div=document.createElement("div");
+div.className="bg-glass border border-white/10 rounded-xl3 p-4 animate-pop";
+div.innerHTML=`
+<img src="${p.img}" class="rounded-xl3 mb-3 cursor-pointer">
 <h3 class="font-black">${p.name}</h3>
-${p.badge?`<span class="text-xs text-accent">${p.badge}</span>`:""}
-</div>
-<p class="text-muted text-sm mt-1">${p.price} €</p>
-<button onclick="add(${p.id})"
-class="mt-3 w-full bg-gradient-to-br from-accent to-accent2 text-black py-2 rounded-xl">
-Ajouter
-</button>
-</div>`;
+<p class="text-sm text-muted">${p.desc}</p>
+<p class="mt-2 font-bold">${p.price?`${p.price}€`:"Sur devis"}</p>
+<button class="mt-3 w-full bg-white/10 py-2 rounded-xl3">Voir</button>
+`;
+div.querySelector("img").onclick=()=>openModal(p);
+div.querySelector("button").onclick=()=>openModal(p);
+$("list").appendChild(div);
 });
 renderCart();
 }
 
-function add(id){
-cart[id]=(cart[id]||0)+1;
+function openModal(p){
+$("modal").classList.remove("hidden");
+$("modalImg").src=p.img;
+$("modalTitle").textContent=p.name;
+$("modalDesc").textContent=p.desc;
+$("modalPrice").textContent=p.price?`${p.price}€`:"Sur devis";
+$("modalAdd").onclick=()=>{
+state.cart[p.id]=(state.cart[p.id]||0)+1;
 save();
+closeModal();
+};
 }
 
-function remove(id){
-delete cart[id];
-save();
-}
-
-function save(){
-localStorage.setItem("cart",JSON.stringify(cart));
-render();
-}
+function closeModal(){ $("modal").classList.add("hidden"); }
 
 function renderCart(){
 $("cartItems").innerHTML="";
 let total=0;
-Object.keys(cart).forEach(id=>{
+Object.keys(state.cart).forEach(id=>{
 const p=PRODUCTS.find(x=>x.id==id);
-total+=p.price*cart[id];
+total+=p.price*state.cart[id];
 $("cartItems").innerHTML+=`
-<div class="flex justify-between text-sm">
-<span>${p.name} x${cart[id]}</span>
+<div class="flex justify-between">
+<span>${p.name} x${state.cart[id]}</span>
 <button onclick="remove(${id})" class="text-bad">✕</button>
 </div>`;
 });
-$("total").innerText=total+"€";
+$("total").textContent=total+"€";
 $("cart").classList.toggle("hidden",!total);
 }
 
-document.querySelectorAll(".filter").forEach(b=>{
-b.onclick=()=>{filter=b.dataset.cat;render();}
-});
+function remove(id){
+delete state.cart[id];
+save();
+}
 
-$("search").oninput=render;
+function save(){
+localStorage.setItem("cart",JSON.stringify(state.cart));
+render();
+}
 
-$("send").onclick=()=>{
-let msg="🛒 Nouvelle commande\n\n";
-Object.keys(cart).forEach(id=>{
+function sendOrder(){
+let msg="🛒 Commande\n\n";
+Object.keys(state.cart).forEach(id=>{
 const p=PRODUCTS.find(x=>x.id==id);
-msg+=`• ${p.name} x${cart[id]}\n`;
+msg+=`• ${p.name} x${state.cart[id]}\n`;
 });
-msg+=`\nNom : ${$("name").value}\nTéléphone : ${$("phone").value}\nNote : ${$("note").value}`;
-window.open(`https://t.me/${USERNAME}?text=${encodeURIComponent(msg)}`);
-};
+msg+=`\nNom: ${$("name").value}\nTéléphone: ${$("phone").value}\nNote: ${$("note").value}`;
+window.open(`https://t.me/${TELEGRAM_USERNAME}?text=${encodeURIComponent(msg)}`);
+}
+
+document.querySelectorAll(".filter").forEach(b=>{
+b.onclick=()=>{state.filter=b.dataset.cat;render();}
+});
+$("search").oninput=render;
 
 render();
 </script>
