@@ -1,131 +1,206 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Catalogue Produits</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mini App Catalogue</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode:'class',
+    theme: {
+      extend: {
+        colors: {
+          bg0:'#05070D',
+          bg1:'#0B1020',
+          accent:'#FFD400',
+          accent2:'#FFB800',
+          text:'rgba(250,253,255,.96)',
+          muted:'rgba(250,253,255,.66)',
+          muted2:'rgba(250,253,255,.48)',
+          good:'#2EE59D',
+          bad:'#FF4D4D',
+        },
+        borderRadius:{
+          xl2:'18px',
+          xl3:'24px',
+          xl4:'28px'
+        },
+        fontFamily:{
+          ui:['ui-sans-serif','system-ui','-apple-system','"SF Pro Display"','"SF Pro Text"','Segoe UI','Roboto','Helvetica','Arial','"Apple Color Emoji"','"Segoe UI Emoji"']
+        }
+      }
+    }
+  }
+</script>
 </head>
-<body class="bg-gray-900 text-white font-sans">
+<body class="min-h-screen font-ui bg-bg0 text-text px-4 py-4">
 
-<!-- Header -->
-<header class="flex justify-between items-center p-4 bg-gray-800 shadow-md">
-  <h1 class="text-2xl font-bold">Mon Marché</h1>
-  <div class="relative">
-    <button id="cartBtn" class="flex items-center gap-2 px-4 py-2 bg-accent rounded-xl hover:bg-yellow-400 transition">
-      Panier
-      <span id="cartBadge" class="ml-1 px-2 py-1 bg-black text-white rounded-full text-sm">0</span>
-    </button>
-  </div>
+<!-- HEADER -->
+<header class="mb-4">
+  <h1 class="text-2xl font-black">Catalogue Mini App</h1>
+  <input id="search" type="search" placeholder="Recherche produit/provenance"
+         class="mt-2 w-full rounded-xl2 border border-white/10 bg-bg1 px-3 py-2 text-text outline-none"/>
 </header>
 
-<!-- Catalogue -->
-<main class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="catalogue">
-  <!-- Les cartes seront générées par JS -->
-</main>
+<!-- PRODUITS -->
+<section id="catalogue" class="grid gap-3"></section>
 
-<!-- Modal Panier -->
-<div id="cartModal" class="fixed inset-0 bg-black/50 hidden justify-center items-center z-50">
-  <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-md">
-    <h2 class="text-xl font-bold mb-4">Votre Panier</h2>
-    <div id="cartItems" class="space-y-4 max-h-64 overflow-y-auto"></div>
-    <div class="mt-4 flex justify-between font-bold text-lg">
-      <span>Total :</span>
-      <span id="cartTotal">0 €</span>
-    </div>
-    <button onclick="toggleCart(false)" class="mt-4 w-full py-2 bg-accent rounded-xl hover:bg-yellow-400 transition">Fermer</button>
+<!-- PANIER FIXED BOTTOM -->
+<div id="cartBar" class="fixed bottom-0 left-0 right-0 bg-bg1 border-t border-white/10 p-3 flex items-center justify-between shadow-lg rounded-t-xl4">
+  <div>
+    <div class="font-black">Panier</div>
+    <div id="cartSummary" class="text-sm text-muted">Aucun produit</div>
+  </div>
+  <div class="flex gap-2">
+    <button id="clearCart" class="px-3 py-2 rounded-xl2 border border-white/10 bg-white/5 text-text font-black">Vider</button>
+    <button id="copyCart" class="px-3 py-2 rounded-xl2 border border-white/10 bg-white/5 text-text font-black">Copier</button>
   </div>
 </div>
 
 <script>
-const products = [
-  {id:1, name:"Tomates", pricePer100g:0.5, image:"https://via.placeholder.com/150"},
-  {id:2, name:"Pommes", pricePer100g:0.8, image:"https://via.placeholder.com/150"},
-  {id:3, name:"Fromage", pricePer100g:1.2, image:"https://via.placeholder.com/150"}
+/* ==============================
+   DONNÉES PRODUITS
+   ============================== */
+const PRODUCTS = [
+  {id:"P01",name:"Mousseux",origin:"🇲🇦",price:10},
+  {id:"P02",name:"Static",origin:"🇲🇦",price:12},
+  {id:"P03",name:"Frozen",origin:"🇲🇦",price:15},
+  {id:"P04",name:"Beldia",origin:"🇲🇦",price:12},
+  {id:"P05",name:"Produit 05",origin:"🇳🇱",price:8},
+  {id:"P06",name:"Produit 06",origin:"🇳🇱",price:11},
+  {id:"P07",name:"Cali Plates",origin:"🇺🇸",price:20},
+  {id:"P08",name:"Cali NL",origin:"🇳🇱",price:10},
+  {id:"P09",name:"Cali US",origin:"🇺🇸",price:22},
+  {id:"P10",name:"Produit 10",origin:"🇺🇸",price:18},
+  {id:"P11",name:"Cali Canadienne",origin:"🇨🇦",price:12},
 ];
 
-let cart = [];
+/* ==============================
+   STATE
+   ============================== */
+let state = {
+  cart: loadCart(),
+  query:""
+};
 
-// Génération du catalogue
-const catalogue = document.getElementById('catalogue');
-
-products.forEach(p => {
-  const card = document.createElement('div');
-  card.className = "bg-gray-700 rounded-xl p-4 flex flex-col items-center hover:shadow-lg transition";
-
-  card.innerHTML = `
-    <img src="${p.image}" alt="${p.name}" class="w-32 h-32 object-cover rounded-xl mb-3">
-    <h3 class="font-bold text-lg mb-1">${p.name}</h3>
-    <p class="mb-2">${p.pricePer100g} € / 100g</p>
-    <div class="flex items-center gap-2 mb-3">
-      <input type="number" min="50" max="1000" step="50" value="100" class="w-20 text-black p-1 rounded" id="weight-${p.id}"> g
-    </div>
-    <button class="bg-accent text-black px-4 py-2 rounded-xl hover:bg-yellow-400 transition" onclick="addToCart(${p.id})">Ajouter</button>
-  `;
-  catalogue.appendChild(card);
-});
-
-// Ajouter au panier
-function addToCart(id) {
-  const product = products.find(p => p.id === id);
-  const weight = parseInt(document.getElementById(`weight-${id}`).value);
-
-  const existing = cart.find(c => c.id === id);
-  if(existing) {
-    existing.weight += weight;
-  } else {
-    cart.push({...product, weight});
-  }
-  updateCartUI();
+/* ==============================
+   HELPERS
+   ============================== */
+function loadCart(){
+  try{
+    const c=JSON.parse(localStorage.getItem('mini_cart'));
+    return c&&typeof c==='object'?c:{};
+  }catch(e){return {};}
 }
+function saveCart(){
+  localStorage.setItem('mini_cart',JSON.stringify(state.cart));
+}
+function money(n){return Number(n||0).toFixed(2)+' €';}
 
-// Mettre à jour l'UI du panier
-function updateCartUI() {
-  const cartBadge = document.getElementById('cartBadge');
-  cartBadge.textContent = cart.reduce((sum,c)=> sum+1,0);
-
-  const cartItems = document.getElementById('cartItems');
-  cartItems.innerHTML = "";
-  let total = 0;
-
-  cart.forEach(item => {
-    const itemTotal = (item.pricePer100g * item.weight / 100).toFixed(2);
-    total += parseFloat(itemTotal);
-
-    const div = document.createElement('div');
-    div.className = "flex justify-between items-center bg-gray-600 p-2 rounded-xl";
-    div.innerHTML = `
+/* ==============================
+   RENDER CATALOGUE
+   ============================== */
+const catalogueEl = document.getElementById('catalogue');
+function renderCatalogue(){
+  const q = state.query.toLowerCase();
+  catalogueEl.innerHTML = '';
+  const filtered = PRODUCTS.filter(p=>p.name.toLowerCase().includes(q)||p.origin.toLowerCase().includes(q));
+  if(filtered.length===0){
+    catalogueEl.innerHTML='<div class="text-muted text-center">Aucun produit trouvé.</div>';
+    return;
+  }
+  filtered.forEach(p=>{
+    const qty = state.cart[p.id]?.weight || 100; // poids par défaut 100g
+    const card = document.createElement('div');
+    card.className='bg-bg1 border border-white/10 rounded-xl3 p-3 flex justify-between items-center';
+    card.innerHTML=`
       <div>
-        <p class="font-bold">${item.name}</p>
-        <p class="text-sm">${item.weight}g - ${itemTotal} €</p>
+        <div class="font-black">${p.name}</div>
+        <div class="text-sm text-muted">${p.origin}</div>
+        <div class="text-sm font-black">${money(p.price)} / 100g</div>
       </div>
-      <div class="flex items-center gap-1">
-        <button onclick="changeWeight(${item.id}, -50)" class="px-2 py-1 bg-gray-500 rounded hover:bg-gray-400">-</button>
-        <button onclick="changeWeight(${item.id}, 50)" class="px-2 py-1 bg-gray-500 rounded hover:bg-gray-400">+</button>
+      <div class="flex flex-col items-end gap-1">
+        <input type="number" min="50" max="1000" step="50" value="${qty}" data-id="${p.id}" class="w-20 text-black rounded px-1 py-0.5" />
+        <button data-act="add" data-id="${p.id}" class="mt-1 px-2 py-1 rounded-xl2 border border-white/10 bg-accent text-black font-black">
+          Ajouter
+        </button>
       </div>
     `;
-    cartItems.appendChild(div);
+    catalogueEl.appendChild(card);
   });
-
-  document.getElementById('cartTotal').textContent = total.toFixed(2) + " €";
 }
 
-// Modifier le poids dans le panier
-function changeWeight(id, delta) {
-  const item = cart.find(c => c.id===id);
-  if(!item) return;
-  item.weight += delta;
-  if(item.weight < 50) item.weight = 50;
-  updateCartUI();
+/* ==============================
+   HANDLE ACTIONS
+   ============================== */
+catalogueEl.addEventListener('click',e=>{
+  const btn=e.target.closest('button');
+  if(!btn) return;
+  const act=btn.dataset.act,id=btn.dataset.id;
+  if(!id) return;
+
+  const input = catalogueEl.querySelector(`input[data-id="${id}"]`);
+  const weight = input ? parseInt(input.value) : 100;
+
+  if(act==='add'){
+    state.cart[id] = {weight};
+  }
+  saveCart();
+  renderCatalogue();
+  renderCart();
+});
+
+/* ==============================
+   SEARCH
+   ============================== */
+document.getElementById('search').addEventListener('input',e=>{
+  state.query=e.target.value;
+  renderCatalogue();
+});
+
+/* ==============================
+   RENDER PANIER
+   ============================== */
+const cartSummary = document.getElementById('cartSummary');
+function renderCart(){
+  const items = Object.entries(state.cart);
+  if(items.length===0){cartSummary.textContent='Aucun produit'; return;}
+  let total=0;
+  const lines=[];
+  items.forEach(([id,data])=>{
+    const p = PRODUCTS.find(x=>x.id===id);
+    if(p){
+      const price = p.price * (data.weight/100);
+      total+=price;
+      lines.push(`${p.origin} ${p.name} ×${data.weight}g = ${money(price)}`);
+    }
+  });
+  cartSummary.textContent = `${items.length} produit(s) • Total indicatif ${money(total)}`;
+  cartSummary.dataset.lines = lines.join('\n');
 }
 
-// Toggle Modal Panier
-function toggleCart(show) {
-  document.getElementById('cartModal').classList.toggle('hidden', !show);
-}
+/* ==============================
+   CLEAR / COPY CART
+   ============================== */
+document.getElementById('clearCart').addEventListener('click',()=>{
+  state.cart={};
+  saveCart();
+  renderCatalogue();
+  renderCart();
+});
 
-// Ouvrir le panier
-document.getElementById('cartBtn').addEventListener('click', () => toggleCart(true));
+document.getElementById('copyCart').addEventListener('click',()=>{
+  const text = cartSummary.dataset.lines||'Panier vide';
+  navigator.clipboard.writeText(text).then(()=>alert('Panier copié !'));
+});
+
+/* ==============================
+   INITIALIZE
+   ============================== */
+renderCatalogue();
+renderCart();
 </script>
+
 </body>
 </html>
