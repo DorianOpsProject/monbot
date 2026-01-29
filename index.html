@@ -2,337 +2,254 @@
 <html lang="fr" class="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini App — Commande au gramme</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>GRAM STORE — Mini App</title>
 
-<!-- ========================================================= -->
-<!-- TAILWIND CDN -->
-<!-- ========================================================= -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = {
-  darkMode: 'class',
-  theme: {
-    extend: {
-      colors: {
-        bg0: '#070916',
-        bg1: '#0C1024',
-        glass: 'rgba(255,255,255,0.05)',
-        stroke: 'rgba(255,255,255,0.08)',
-        text: 'rgba(240,244,255,0.95)',
-        muted: 'rgba(240,244,255,0.60)',
-        accent: '#6EE7FF',
-        accent2: '#8B5CF6',
-        danger: '#FB7185',
-        ok: '#34D399'
-      },
-      borderRadius: {
-        xl3: '22px'
-      }
-    }
-  }
-}
-</script>
 
-<!-- ========================================================= -->
-<!-- STYLES CUSTOM -->
-<!-- ========================================================= -->
-<style>
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.fade-up {
-  animation: fadeUp .25s ease-out both;
-}
-</style>
+<script>
+tailwind.config={
+darkMode:'class',
+theme:{extend:{
+colors:{
+bg0:'#05070D',bg1:'#0B1020',
+glass:'rgba(255,255,255,.06)',
+stroke:'rgba(255,255,255,.12)',
+text:'rgba(250,253,255,.96)',
+muted:'rgba(250,253,255,.65)',
+accent:'#FFD400',accent2:'#FFB800',
+good:'#2EE59D',bad:'#FF4D4D'
+},
+borderRadius:{xl2:'18px',xl3:'24px',xl4:'28px'}
+}}}
+</script>
 </head>
 
-<body class="min-h-screen text-text
-bg-[radial-gradient(900px_600px_at_20%_-10%,rgba(139,92,246,.18),transparent_60%),radial-gradient(900px_600px_at_90%_10%,rgba(110,231,255,.18),transparent_55%),linear-gradient(180deg,#070916,#0C1024)]">
+<body class="min-h-screen font-sans text-text bg-[linear-gradient(180deg,#05070D,#0B1020)]">
 
-<!-- ========================================================= -->
-<!-- APP CONTAINER -->
-<!-- ========================================================= -->
-<div class="max-w-[980px] mx-auto px-4 pb-40">
+<div class="mx-auto max-w-[980px] px-3 pb-[120px] pt-[calc(14px+env(safe-area-inset-top))]">
 
-<!-- ========================================================= -->
 <!-- HEADER -->
-<!-- ========================================================= -->
-<header class="sticky top-0 z-30 backdrop-blur-xl border-b border-white/10 py-4">
-  <h1 class="text-xl font-black">Catalogue — Vente au gramme</h1>
-  <p class="text-sm text-muted">Mini app métier • Commande précise</p>
-
-  <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-    <input id="searchInput" placeholder="Rechercher un produit"
-      class="bg-glass border border-white/10 rounded-xl3 px-4 py-3">
-
-    <select id="originFilter"
-      class="bg-glass border border-white/10 rounded-xl3 px-4 py-3">
-      <option value="all">Toutes provenances</option>
-    </select>
-
-    <select id="sortSelect"
-      class="bg-glass border border-white/10 rounded-xl3 px-4 py-3">
-      <option value="name">Tri : Nom</option>
-      <option value="priceAsc">Prix /g croissant</option>
-      <option value="priceDesc">Prix /g décroissant</option>
-    </select>
+<header class="sticky top-0 z-20 mb-3 border-b border-white/10 bg-[#05070D]/80 backdrop-blur">
+  <div class="flex items-center justify-between py-3">
+    <div>
+      <h1 class="text-[18px] font-black">GRAM STORE</h1>
+      <p class="text-[12px] text-muted">Commande au gramme • Envoi privé</p>
+    </div>
+    <div class="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+      <span class="h-2 w-2 rounded-full bg-good"></span>
+      <span class="text-[12px]">OUVERT</span>
+    </div>
   </div>
+
+  <input id="q"
+    class="w-full rounded-xl3 bg-white/5 border border-white/10 px-4 py-3 text-[14px] outline-none"
+    placeholder="Recherche : nom ou provenance">
 </header>
 
-<!-- ========================================================= -->
-<!-- PRODUCT LIST -->
-<!-- ========================================================= -->
-<main id="productList" class="mt-6 grid gap-4"></main>
+<!-- LIST -->
+<main>
+  <div class="mb-2 flex items-center justify-between">
+    <span class="text-[13px] font-black">Catalogue</span>
+    <span id="count" class="text-[12px] text-muted">—</span>
+  </div>
 
+  <div id="list" class="flex flex-col gap-3"></div>
+
+  <div id="empty" class="hidden mt-4 rounded-xl3 border border-dashed border-white/15 bg-white/5 p-4 text-center text-muted">
+    Aucun produit trouvé
+  </div>
+</main>
 </div>
 
-<!-- ========================================================= -->
-<!-- CART -->
-<!-- ========================================================= -->
-<div id="cartPanel"
-class="fixed bottom-0 left-0 right-0 bg-[#0B0F1E]/95 backdrop-blur-xl border-t border-white/10 p-4 hidden">
-
-  <h2 class="font-black text-lg">Commande</h2>
-
-  <div id="cartItems" class="mt-3 space-y-3 text-sm"></div>
-
-  <div class="mt-4 flex justify-between text-base">
-    <span>Total</span>
-    <strong id="cartTotal">0 €</strong>
-  </div>
-
-  <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-    <input id="clientName" placeholder="Nom client"
-      class="bg-glass border border-white/10 rounded-xl3 px-3 py-2">
-    <input id="clientContact" placeholder="Contact"
-      class="bg-glass border border-white/10 rounded-xl3 px-3 py-2">
-    <input id="clientRef" placeholder="Référence interne"
-      class="bg-glass border border-white/10 rounded-xl3 px-3 py-2">
-  </div>
-
-  <textarea id="clientNote"
-    placeholder="Note complémentaire"
-    class="mt-3 w-full bg-glass border border-white/10 rounded-xl3 px-3 py-2"></textarea>
-
-  <div class="mt-4 grid grid-cols-2 gap-3">
-    <button id="exportTelegram"
-      class="bg-gradient-to-br from-accent to-accent2 text-black font-black py-3 rounded-xl3">
-      Envoyer Telegram
-    </button>
-    <button id="clearCart"
-      class="bg-white/10 py-3 rounded-xl3">
-      Vider
+<!-- CART BAR -->
+<div class="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#05070D]/90 backdrop-blur px-3 py-3">
+  <div class="mx-auto max-w-[980px] flex items-center gap-3">
+    <button id="openCart"
+      class="flex-1 flex items-center justify-between rounded-xl3 border border-white/10 bg-white/5 px-4 py-3">
+      <div>
+        <div class="font-black text-[13px]">🧺 Panier</div>
+        <div id="cartHint" class="text-[12px] text-muted">Vide</div>
+      </div>
+      <div id="badge"
+        class="grid h-8 min-w-[32px] place-items-center rounded-full bg-[rgba(255,212,0,.18)] text-[13px] font-black">
+        0
+      </div>
     </button>
   </div>
 </div>
+
+<!-- SHEET -->
+<div id="mask" class="fixed inset-0 bg-black/60 opacity-0 pointer-events-none transition"></div>
+
+<aside id="sheet"
+class="fixed left-1/2 z-50 w-[min(980px,calc(100%-16px))] -translate-x-1/2 rounded-xl4 border border-white/10 bg-[#0B1020] shadow-xl transition-[bottom] duration-300"
+style="bottom:-120%">
+  
+  <div class="border-b border-white/10 px-4 py-3 flex justify-between">
+    <span class="font-black">Panier</span>
+    <button id="closeCart">Fermer</button>
+  </div>
+
+  <div class="max-h-[60vh] overflow-auto px-4 py-3">
+    <div id="cartItems"></div>
+    <div id="cartEmpty" class="hidden text-center text-muted py-6">
+      Panier vide
+    </div>
+
+    <div class="mt-4 rounded-xl3 border border-white/10 bg-white/5 p-3">
+      <label class="text-[12px] text-muted">Ton nom</label>
+      <input id="name" class="w-full mt-1 rounded-xl2 bg-black/20 px-3 py-2 outline-none">
+
+      <label class="mt-3 block text-[12px] text-muted">Téléphone</label>
+      <input id="phone" class="w-full mt-1 rounded-xl2 bg-black/20 px-3 py-2 outline-none">
+    </div>
+  </div>
+
+  <div class="border-t border-white/10 px-4 py-3">
+    <div class="flex justify-between text-[14px]">
+      <span>Total indicatif</span>
+      <b id="total">0.00 €</b>
+    </div>
+    <button id="order"
+      class="mt-3 w-full rounded-xl3 bg-gradient-to-br from-accent to-accent2 py-3 font-black text-[#141414]">
+      Commander via Telegram
+    </button>
+  </div>
+</aside>
 
 <script>
-/* ============================================================
-   CONFIG
-============================================================ */
-const TELEGRAM_USERNAME = "TON_USERNAME";
-
-/* ============================================================
-   PRODUITS (NO IMAGE / MÉTIER)
-============================================================ */
-const PRODUCTS = [
-  { id: 1,  name: "Résine Alpha",    origin: "Maroc",   pricePerGram: 7.5 },
-  { id: 2,  name: "Fleur Delta",     origin: "Espagne", pricePerGram: 9.2 },
-  { id: 3,  name: "Concentré Zeta",  origin: "Suisse",  pricePerGram: 14.0 },
-  { id: 4,  name: "Extract Omega",   origin: "Canada",  pricePerGram: 18.5 },
-  { id: 5,  name: "Fleur Sigma",     origin: "France",  pricePerGram: 8.8 }
+/* ================= DATA ================= */
+const PRODUCTS=[
+{id:"G01",name:"Static Dry",origin:"🇲🇦 Maroc",price:10},
+{id:"G02",name:"Frozen Trim",origin:"🇳🇱 Pays-Bas",price:8},
+{id:"G03",name:"Premium Cali",origin:"🇺🇸 USA",price:18},
+{id:"G04",name:"Hash Mousseux",origin:"🇲🇦 Maroc",price:6}
 ];
 
-/* ============================================================
-   STATE GLOBAL
-============================================================ */
-const state = {
-  products: PRODUCTS,
-  cart: JSON.parse(localStorage.getItem("cart") || "{}"),
-  search: "",
-  origin: "all",
-  sort: "name"
+const CONTACT="Petter59000XSLR";
+const CART_KEY="gram_cart_v1";
+
+/* ================= STATE ================= */
+const state={
+q:"",
+cart:JSON.parse(localStorage.getItem(CART_KEY)||"{}")
 };
 
-/* ============================================================
-   HELPERS
-============================================================ */
-const $ = id => document.getElementById(id);
+/* ================= HELPERS ================= */
+const $=id=>document.getElementById(id);
+const money=n=>Number(n).toFixed(2)+" €";
 
-function saveCart() {
-  localStorage.setItem("cart", JSON.stringify(state.cart));
+function cartItems(){
+return Object.entries(state.cart).map(([id,g])=>{
+const p=PRODUCTS.find(x=>x.id===id);
+return p?{p,grams:g}:null;
+}).filter(Boolean);
 }
 
-/* ============================================================
-   INITIALISATION PROVENANCES
-============================================================ */
-(function initOrigins(){
-  const origins = [...new Set(PRODUCTS.map(p => p.origin))];
-  origins.forEach(o=>{
-    const opt = document.createElement("option");
-    opt.value = o;
-    opt.textContent = o;
-    $("originFilter").appendChild(opt);
-  });
-})();
-
-/* ============================================================
-   RENDER PRODUITS
-============================================================ */
-function renderProducts() {
-  const list = $("productList");
-  list.innerHTML = "";
-
-  let items = [...state.products];
-
-  if (state.search) {
-    items = items.filter(p =>
-      p.name.toLowerCase().includes(state.search)
-    );
-  }
-
-  if (state.origin !== "all") {
-    items = items.filter(p => p.origin === state.origin);
-  }
-
-  if (state.sort === "priceAsc") {
-    items.sort((a,b)=>a.pricePerGram-b.pricePerGram);
-  } else if (state.sort === "priceDesc") {
-    items.sort((a,b)=>b.pricePerGram-a.pricePerGram);
-  } else {
-    items.sort((a,b)=>a.name.localeCompare(b.name));
-  }
-
-  items.forEach(p=>{
-    const row = document.createElement("div");
-    row.className = "bg-glass border border-white/10 rounded-xl3 p-4 fade-up";
-
-    row.innerHTML = `
-      <div class="flex justify-between">
-        <div>
-          <h3 class="font-black">${p.name}</h3>
-          <p class="text-sm text-muted">${p.origin}</p>
-        </div>
-        <div class="text-right">
-          <p class="font-bold">${p.pricePerGram.toFixed(2)} €/g</p>
-        </div>
-      </div>
-
-      <div class="mt-4 grid grid-cols-3 gap-2">
-        <input type="number" min="0" step="0.1"
-          placeholder="Grammes"
-          class="col-span-2 bg-glass border border-white/10 rounded-xl3 px-3 py-2"
-          id="g-${p.id}">
-        <button
-          class="bg-white/10 rounded-xl3"
-          onclick="addToCart(${p.id})">
-          Ajouter
-        </button>
-      </div>
-    `;
-    list.appendChild(row);
-  });
+function total(){
+return cartItems().reduce((s,i)=>s+i.grams*i.p.price,0);
 }
 
-/* ============================================================
-   PANIER
-============================================================ */
-function addToCart(productId) {
-  const input = document.getElementById(`g-${productId}`);
-  const grams = parseFloat(input.value);
-  if (!grams || grams <= 0) return;
-
-  state.cart[productId] = (state.cart[productId] || 0) + grams;
-  input.value = "";
-  saveCart();
-  renderCart();
+function save(){
+localStorage.setItem(CART_KEY,JSON.stringify(state.cart));
+renderAll();
 }
 
-function removeFromCart(productId) {
-  delete state.cart[productId];
-  saveCart();
-  renderCart();
+/* ================= RENDER ================= */
+function renderList(){
+const q=state.q.toLowerCase();
+const list=$("list");
+list.innerHTML="";
+const filtered=PRODUCTS.filter(p=>
+(p.name+p.origin).toLowerCase().includes(q)
+);
+
+$("count").textContent=filtered.length+" produit(s)";
+$("empty").classList.toggle("hidden",filtered.length>0);
+
+for(const p of filtered){
+const g=state.cart[p.id]||0;
+const el=document.createElement("div");
+el.className="rounded-xl4 border border-white/10 bg-white/5 p-4";
+el.innerHTML=`
+<div class="flex justify-between">
+  <div>
+    <div class="font-black">${p.name}</div>
+    <div class="text-[12px] text-muted">${p.origin}</div>
+  </div>
+  <div class="text-right">
+    <div class="font-black">${p.price} € / g</div>
+    <div class="text-[12px] text-muted">${g} g</div>
+  </div>
+</div>
+
+<div class="mt-3 flex gap-2">
+  <input type="number" min="0" step="1" value="${g}"
+    class="flex-1 rounded-xl2 bg-black/20 px-3 py-2"
+    data-id="${p.id}">
+  <button class="add rounded-xl2 bg-white/10 px-4"
+    data-id="${p.id}">OK</button>
+</div>`;
+el.querySelector(".add").onclick=()=>{
+const val=parseInt(el.querySelector("input").value||0);
+if(val<=0) delete state.cart[p.id];
+else state.cart[p.id]=val;
+save();
+};
+list.appendChild(el);
+}
 }
 
-function renderCart() {
-  const box = $("cartItems");
-  box.innerHTML = "";
-  let total = 0;
-
-  Object.keys(state.cart).forEach(id=>{
-    const p = state.products.find(x=>x.id==id);
-    const grams = state.cart[id];
-    const price = grams * p.pricePerGram;
-    total += price;
-
-    const line = document.createElement("div");
-    line.className = "flex justify-between items-center";
-
-    line.innerHTML = `
-      <div>
-        <strong>${p.name}</strong>
-        <p class="text-xs text-muted">${grams.toFixed(2)} g × ${p.pricePerGram} €/g</p>
-      </div>
-      <div class="text-right">
-        <p>${price.toFixed(2)} €</p>
-        <button class="text-danger text-xs" onclick="removeFromCart(${id})">Supprimer</button>
-      </div>
-    `;
-    box.appendChild(line);
-  });
-
-  $("cartTotal").textContent = total.toFixed(2) + " €";
-  $("cartPanel").classList.toggle("hidden", total === 0);
+function renderCart(){
+const items=cartItems();
+$("cartItems").innerHTML="";
+$("cartEmpty").classList.toggle("hidden",items.length>0);
+for(const it of items){
+const row=document.createElement("div");
+row.className="mb-2 flex justify-between text-[13px]";
+row.innerHTML=`
+<span>${it.p.name} (${it.grams} g)</span>
+<b>${money(it.grams*it.p.price)}</b>`;
+$("cartItems").appendChild(row);
+}
+$("total").textContent=money(total());
+$("cartHint").textContent=items.length?items.length+" produit(s)":"Vide";
+$("badge").textContent=items.length;
 }
 
-/* ============================================================
-   EXPORT TELEGRAM
-============================================================ */
-$("exportTelegram").onclick = ()=>{
-  let msg = "🧾 COMMANDE\n\n";
-  Object.keys(state.cart).forEach(id=>{
-    const p = PRODUCTS.find(x=>x.id==id);
-    const g = state.cart[id];
-    msg += `• ${p.name} (${p.origin})\n`;
-    msg += `  ${g.toFixed(2)} g × ${p.pricePerGram} €/g\n`;
-  });
+/* ================= ORDER ================= */
+function order(){
+if(!cartItems().length) return;
+let msg="🧾 COMMANDE\n\n";
+for(const it of cartItems()){
+msg+=`• ${it.p.name} ${it.grams}g (${it.p.origin}) = ${money(it.grams*it.p.price)}\n`;
+}
+msg+=`\nTotal: ${money(total())}\n`;
+msg+=`Nom: ${$("name").value}\nTel: ${$("phone").value}`;
+window.open(`https://t.me/${CONTACT}?text=${encodeURIComponent(msg)}`);
+}
 
-  msg += "\nClient : " + $("clientName").value;
-  msg += "\nContact : " + $("clientContact").value;
-  msg += "\nRef : " + $("clientRef").value;
-  msg += "\nNote : " + $("clientNote").value;
-
-  window.open(`https://t.me/${TELEGRAM_USERNAME}?text=${encodeURIComponent(msg)}`);
-};
-
-/* ============================================================
-   EVENTS
-============================================================ */
-$("searchInput").oninput = e => {
-  state.search = e.target.value.toLowerCase();
-  renderProducts();
-};
-$("originFilter").onchange = e => {
-  state.origin = e.target.value;
-  renderProducts();
-};
-$("sortSelect").onchange = e => {
-  state.sort = e.target.value;
-  renderProducts();
-};
-$("clearCart").onclick = ()=>{
-  state.cart = {};
-  saveCart();
-  renderCart();
-};
-
-/* ============================================================
-   INIT
-============================================================ */
-renderProducts();
+/* ================= EVENTS ================= */
+$("q").oninput=e=>{state.q=e.target.value;renderList();};
+$("openCart").onclick=()=>{
+$("mask").classList.remove("opacity-0","pointer-events-none");
+$("sheet").style.bottom="10px";
 renderCart();
+};
+$("closeCart").onclick=closeCart;
+$("mask").onclick=closeCart;
+function closeCart(){
+$("mask").classList.add("opacity-0","pointer-events-none");
+$("sheet").style.bottom="-120%";
+}
+$("order").onclick=order;
+
+/* ================= INIT ================= */
+function renderAll(){renderList();renderCart();}
+renderAll();
 </script>
 </body>
 </html>
