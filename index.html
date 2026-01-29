@@ -26,27 +26,22 @@ tailwind.config = {
 }
 </script>
 </head>
-<body class="bg-bg0 text-text font-ui pt-24">
+<body class="bg-bg0 text-text font-ui pt-20">
 
 <!-- HEADER FIXE -->
-<header class="fixed top-0 left-0 right-0 bg-bg1 border-b border-white/10 px-6 py-4 z-50">
-  <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
-    <div>
-      <h1 class="text-3xl font-extrabold tracking-tight">GIO Shop</h1>
-      <p class="text-sm text-muted">La Cali avant tout</p>
-    </div>
-    <div class="flex flex-col md:flex-row md:items-center gap-2 mt-2 md:mt-0">
-      <input type="search" id="search" placeholder="Recherche..." class="px-4 py-2 rounded-xl2 bg-bg0/80 border border-white/10 placeholder:text-muted focus:outline-none w-full md:w-60">
-      <div class="flex gap-2 mt-2 md:mt-0">
-        <button data-filter="salade" class="px-3 py-2 rounded-xl2 bg-accent font-black text-black hover:bg-accent2 transition">Salade</button>
-        <button data-filter="chocolat" class="px-3 py-2 rounded-xl2 bg-accent font-black text-black hover:bg-accent2 transition">Chocolat</button>
-      </div>
-    </div>
+<header class="fixed top-0 left-0 right-0 bg-bg1 border-b border-white/10 px-6 py-3 z-50 flex justify-between items-center">
+  <!-- Logo Graffiti SVG -->
+  <div class="flex items-center gap-3">
+    <svg class="w-32 h-10" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="35" fill="#FFD400" font-family="Comic Sans MS, cursive, sans-serif" font-size="35" font-weight="bold">GIO Shop</text>
+    </svg>
+    <span class="text-sm text-muted">La Cali avant tout</span>
   </div>
+  <input type="search" id="search" placeholder="Rechercher..." class="px-4 py-2 rounded-xl2 bg-bg0/80 border border-white/10 placeholder:text-muted focus:outline-none w-60">
 </header>
 
 <!-- CATALOGUE -->
-<section id="catalogue" class="grid gap-6 px-6 pb-32 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></section>
+<section id="catalogue" class="grid gap-6 px-6 pb-32 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-4"></section>
 
 <!-- DRAWER PANIER -->
 <div id="drawerBackdrop" class="fixed inset-0 bg-black/50 hidden z-40"></div>
@@ -66,35 +61,36 @@ tailwind.config = {
 </div>
 
 <!-- BOUTON PANIER FLOTTANT -->
-<button id="openDrawer" class="fixed bottom-6 right-6 bg-accent text-black px-4 py-3 rounded-full font-black shadow-lg hover:bg-accent2 transition z-50">Panier</button>
+<button id="openDrawer" class="fixed bottom-6 right-6 bg-accent text-black px-4 py-3 rounded-full font-black shadow-lg hover:bg-accent2 transition z-50 relative">
+  Panier
+  <span id="cartBadge" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-black">0</span>
+</button>
 
 <script>
 /* ==============================
-   DONNÉES PRODUITS
+   PRODUITS
 ============================== */
 const PRODUCTS = [
   {id:"P01",name:"Mousseux",thc:18,origin:"🇲🇦",price:10},
   {id:"P02",name:"Static",thc:22,origin:"🇲🇦",price:12},
   {id:"P03",name:"Frozen",thc:25,origin:"🇲🇦",price:15},
   {id:"P04",name:"Beldia",thc:20,origin:"🇲🇦",price:12},
-  {id:"P05",name:"Produit 05",thc:17,origin:"🇳🇱",price:8},
-  {id:"P06",name:"Produit 06",thc:19,origin:"🇳🇱",price:11},
-  {id:"P07",name:"Cali Plates",thc:23,origin:"🇺🇸",price:20},
-  {id:"P08",name:"Cali NL",thc:21,origin:"🇳🇱",price:10},
-  {id:"P09",name:"Cali US",thc:24,origin:"🇺🇸",price:22},
-  {id:"P10",name:"Produit 10",thc:20,origin:"🇺🇸",price:18},
-  {id:"P11",name:"Cali Canadienne",thc:18,origin:"🇨🇦",price:12},
+  {id:"P05",name:"Cali Plates",thc:23,origin:"🇺🇸",price:20},
+  {id:"P06",name:"Cali NL",thc:21,origin:"🇳🇱",price:10},
+  {id:"P07",name:"Cali US",thc:24,origin:"🇺🇸",price:22},
+  {id:"P08",name:"Cali Canadienne",thc:18,origin:"🇨🇦",price:12},
 ];
 
 /* ==============================
    STATE
 ============================== */
-let state = { cart: {}, query:"" };
+let state = { cart:{} , query:"" };
 
 /* ==============================
    HELPERS
 ============================== */
 function money(n){return Number(n||0).toFixed(2)+' €';}
+function totalItems(){ return Object.values(state.cart).reduce((sum,p)=>sum+p.qty,0); }
 
 /* ==============================
    RENDER CATALOGUE
@@ -114,7 +110,7 @@ function renderCatalogue(){
     const grams = state.cart[p.id]?.grams || 1;
 
     const card = document.createElement('div');
-    card.className='bg-bg1 border border-white/10 rounded-xl3 p-4 flex flex-col justify-between shadow-lg hover:shadow-2xl transition';
+    card.className='bg-bg1 border border-white/10 rounded-xl3 p-4 flex flex-col justify-between shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1';
     card.innerHTML=`
       <div class="flex justify-between items-start mb-3">
         <div>
@@ -122,7 +118,7 @@ function renderCatalogue(){
           <div class="text-sm text-muted">${p.thc}% THC • ${p.origin}</div>
           <div class="text-sm font-black mt-1">${money(p.price)} / g</div>
         </div>
-        <div class="text-sm font-black text-muted">${qty>0?qty+'×':''}</div>
+        <div class="text-sm font-black text-accent">${qty>0?qty+'×':'-'}</div>
       </div>
 
       <div class="mb-3">
@@ -136,7 +132,7 @@ function renderCatalogue(){
 
     const slider = card.querySelector(`#slider-${p.id}`);
     const sliderVal = card.querySelector(`#sliderVal-${p.id}`);
-    slider.addEventListener('input', e => sliderVal.textContent=e.target.value);
+    slider.addEventListener('input', e=>sliderVal.textContent=e.target.value);
   });
 }
 
@@ -158,17 +154,13 @@ catalogueEl.addEventListener('click', e=>{
     else{ state.cart[id] = {qty:1, grams}; }
   }
   renderDrawer();
+  updateCartBadge();
 });
 
 /* ==============================
    SEARCH
 ============================== */
 document.getElementById('search').addEventListener('input', e=>{state.query=e.target.value; renderCatalogue();});
-document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click', e=>{
-  state.query = btn.dataset.filter;
-  document.getElementById('search').value = btn.dataset.filter;
-  renderCatalogue();
-}));
 
 /* ==============================
    DRAWER
@@ -177,6 +169,7 @@ const drawer = document.getElementById('drawer');
 const drawerBackdrop = document.getElementById('drawerBackdrop');
 const drawerContent = document.getElementById('drawerContent');
 const drawerTotal = document.getElementById('drawerTotal');
+const cartBadge = document.getElementById('cartBadge');
 
 function renderDrawer(){
   drawerContent.innerHTML='';
@@ -204,10 +197,15 @@ function renderDrawer(){
   drawerTotal.textContent=`Total : ${money(total)}`;
 }
 
+function updateCartBadge(){ cartBadge.textContent=totalItems(); }
+
+/* ==============================
+   DRAWER EVENTS
+============================== */
 document.getElementById('openDrawer').addEventListener('click', ()=>{drawer.classList.remove('translate-x-full'); drawerBackdrop.classList.remove('hidden');});
 document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
 drawerBackdrop.addEventListener('click', closeDrawer);
-function closeDrawer(){ drawer.classList.add('translate-x-full'); drawerBackdrop.classList.add('hidden');}
+function closeDrawer(){ drawer.classList.add('translate-x-full'); drawerBackdrop.classList.add('hidden'); }
 
 /* ==============================
    CLEAR / SEND ORDER
@@ -216,6 +214,7 @@ document.getElementById('clearCart').addEventListener('click', ()=>{
   state.cart={};
   renderCatalogue();
   renderDrawer();
+  updateCartBadge();
 });
 
 document.getElementById('sendOrder').addEventListener('click', ()=>{
@@ -245,6 +244,7 @@ document.getElementById('sendOrder').addEventListener('click', ()=>{
 ============================== */
 renderCatalogue();
 renderDrawer();
+updateCartBadge();
 </script>
 </body>
 </html>
