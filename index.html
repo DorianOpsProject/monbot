@@ -1,250 +1,235 @@
 <!DOCTYPE html>
 <html lang="fr" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>GIO Shop</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config = {
-  darkMode:'class',
-  theme:{
-    extend:{
-      colors:{
-        bg0:'#05070D',
-        bg1:'#0B1020',
-        accent:'#FFD400',
-        accent2:'#FFB800',
-        text:'rgba(250,253,255,.96)',
-        muted:'rgba(250,253,255,.66)',
-        muted2:'rgba(250,253,255,.48)',
-      },
-      borderRadius:{ xl2:'18px', xl3:'24px', xl4:'28px' },
-      fontFamily:{ ui:['ui-sans-serif','system-ui','-apple-system','"SF Pro Display"','"SF Pro Text"','Segoe UI','Roboto','Helvetica','Arial','"Apple Color Emoji"','"Segoe UI Emoji"'] }
+  tailwind.config = {
+    darkMode:'class',
+    theme: {
+      extend: {
+        colors: {
+          bg0:'#0A0C14',
+          bg1:'#121622',
+          accent:'#FFD400',
+          accent2:'#FFB800',
+          text:'rgba(250,253,255,.96)',
+          muted:'rgba(250,253,255,.66)',
+          muted2:'rgba(250,253,255,.48)',
+          good:'#2EE59D',
+          bad:'#FF4D4D',
+        },
+        borderRadius:{
+          xl2:'16px',
+          xl3:'22px',
+          xl4:'28px'
+        },
+        fontFamily:{
+          ui:['ui-sans-serif','system-ui','-apple-system','"SF Pro Display"','"SF Pro Text"','Segoe UI','Roboto','Helvetica','Arial','"Apple Color Emoji"','"Segoe UI Emoji"']
+        },
+        boxShadow: {
+          card: '0 10px 25px rgba(0,0,0,0.25)',
+        }
+      }
     }
   }
-}
 </script>
+<style>
+  /* Graffiti logo style */
+  @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+</style>
 </head>
-<body class="bg-bg0 text-text font-ui pt-20">
+<body class="min-h-screen font-ui bg-bg0 text-text px-4">
 
 <!-- HEADER FIXE -->
-<header class="fixed top-0 left-0 right-0 bg-bg1 border-b border-white/10 px-6 py-3 z-50 flex justify-between items-center">
-  <!-- Logo Graffiti SVG -->
+<header class="fixed top-0 left-0 right-0 bg-bg1 border-b border-white/10 z-50 flex items-center justify-between px-4 py-3">
   <div class="flex items-center gap-3">
-    <svg class="w-32 h-10" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-      <text x="0" y="35" fill="#FFD400" font-family="Comic Sans MS, cursive, sans-serif" font-size="35" font-weight="bold">GIO Shop</text>
-    </svg>
+    <h1 class="text-2xl text-accent font-bold" style="font-family: 'Permanent Marker', cursive;">GIO Shop</h1>
     <span class="text-sm text-muted">La Cali avant tout</span>
   </div>
-  <input type="search" id="search" placeholder="Rechercher..." class="px-4 py-2 rounded-xl2 bg-bg0/80 border border-white/10 placeholder:text-muted focus:outline-none w-60">
+  <div id="cartBadge" class="relative cursor-pointer">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 7h13L17 13M7 13L5.4 5M17 13l1.5 7M6 21h.01M18 21h.01"/>
+    </svg>
+    <span id="cartCount" class="absolute -top-2 -right-2 bg-accent text-black text-xs font-black rounded-full px-2 py-0.5">0</span>
+  </div>
 </header>
 
+<div class="h-20"></div> <!-- espace pour header -->
+
 <!-- CATALOGUE -->
-<section id="catalogue" class="grid gap-6 px-6 pb-32 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-4"></section>
+<section id="catalogue" class="grid gap-4"></section>
 
 <!-- DRAWER PANIER -->
-<div id="drawerBackdrop" class="fixed inset-0 bg-black/50 hidden z-40"></div>
-<div id="drawer" class="fixed right-0 top-0 h-full w-96 bg-bg1 shadow-xl transform translate-x-full transition-transform duration-300 flex flex-col z-50">
-  <div class="flex justify-between items-center p-4 border-b border-white/10">
-    <h2 class="font-black text-xl">Panier</h2>
-    <button id="closeDrawer" class="text-text font-black text-lg">&times;</button>
+<div id="cartDrawer" class="fixed top-0 right-[-400px] w-96 h-full bg-bg1 shadow-xl transition-all z-50 flex flex-col">
+  <div class="p-4 border-b border-white/10 flex justify-between items-center">
+    <h2 class="font-black text-xl">Votre Panier</h2>
+    <button id="closeCart" class="text-text font-black">✕</button>
   </div>
-  <div id="drawerContent" class="p-4 flex-1 overflow-y-auto space-y-3"></div>
-  <div class="p-4 border-t border-white/10 space-y-3">
-    <input type="text" id="customerName" placeholder="Nom" class="w-full px-3 py-2 rounded-xl2 bg-bg0/50 border border-white/10 text-text placeholder:text-muted">
-    <input type="text" id="customerAddress" placeholder="Adresse de livraison" class="w-full px-3 py-2 rounded-xl2 bg-bg0/50 border border-white/10 text-text placeholder:text-muted">
-    <div id="drawerTotal" class="font-black text-lg">Total : 0 €</div>
-    <button id="sendOrder" class="w-full px-4 py-2 rounded-xl2 border border-white/10 bg-accent text-black font-black hover:bg-accent2 transition">Envoyer la commande</button>
-    <button id="clearCart" class="w-full px-4 py-2 rounded-xl2 border border-white/10 bg-white/5 text-text font-black hover:bg-white/10 transition">Vider le panier</button>
+  <div class="p-4 flex-1 overflow-y-auto" id="cartItems"></div>
+  <div class="p-4 border-t border-white/10">
+    <input id="customerName" type="text" placeholder="Nom" class="w-full rounded-xl2 px-3 py-2 mb-2 bg-bg0 border border-white/10 text-text outline-none"/>
+    <input id="deliveryAddr" type="text" placeholder="Adresse" class="w-full rounded-xl2 px-3 py-2 mb-4 bg-bg0 border border-white/10 text-text outline-none"/>
+    <div class="flex justify-between mb-4">
+      <span class="font-black">Total:</span>
+      <span id="cartTotal" class="font-black">0 €</span>
+    </div>
+    <button id="sendOrder" class="w-full px-4 py-3 bg-accent text-black font-black rounded-xl3">Envoyer la commande</button>
   </div>
 </div>
 
-<!-- BOUTON PANIER FLOTTANT -->
-<button id="openDrawer" class="fixed bottom-6 right-6 bg-accent text-black px-4 py-3 rounded-full font-black shadow-lg hover:bg-accent2 transition z-50 relative">
-  Panier
-  <span id="cartBadge" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-black">0</span>
-</button>
-
 <script>
 /* ==============================
-   PRODUITS
-============================== */
+   DONNÉES PRODUITS
+   ============================== */
 const PRODUCTS = [
-  {id:"P01",name:"Mousseux",thc:18,origin:"🇲🇦",price:10},
-  {id:"P02",name:"Static",thc:22,origin:"🇲🇦",price:12},
+  {id:"P01",name:"Mousseux",thc:22,origin:"🇲🇦",price:10},
+  {id:"P02",name:"Static",thc:18,origin:"🇲🇦",price:12},
   {id:"P03",name:"Frozen",thc:25,origin:"🇲🇦",price:15},
   {id:"P04",name:"Beldia",thc:20,origin:"🇲🇦",price:12},
-  {id:"P05",name:"Cali Plates",thc:23,origin:"🇺🇸",price:20},
-  {id:"P06",name:"Cali NL",thc:21,origin:"🇳🇱",price:10},
-  {id:"P07",name:"Cali US",thc:24,origin:"🇺🇸",price:22},
-  {id:"P08",name:"Cali Canadienne",thc:18,origin:"🇨🇦",price:12},
+  {id:"P05",name:"Cali NL",thc:19,origin:"🇳🇱",price:10},
+  {id:"P06",name:"Cali US",thc:23,origin:"🇺🇸",price:22},
 ];
 
 /* ==============================
    STATE
-============================== */
-let state = { cart:{} , query:"" };
+   ============================== */
+let state = { cart: {}, query:"" };
 
 /* ==============================
    HELPERS
-============================== */
+   ============================== */
 function money(n){return Number(n||0).toFixed(2)+' €';}
-function totalItems(){ return Object.values(state.cart).reduce((sum,p)=>sum+p.qty,0); }
 
 /* ==============================
    RENDER CATALOGUE
-============================== */
+   ============================== */
 const catalogueEl = document.getElementById('catalogue');
 function renderCatalogue(){
-  const q = state.query.toLowerCase();
   catalogueEl.innerHTML='';
-  const filtered = PRODUCTS.filter(p => p.name.toLowerCase().includes(q) || p.origin.toLowerCase().includes(q));
-  if(filtered.length===0){
-    catalogueEl.innerHTML='<div class="text-muted text-center col-span-full">Aucun produit trouvé.</div>';
-    return;
-  }
-
-  filtered.forEach(p=>{
-    const qty = state.cart[p.id]?.qty || 0;
-    const grams = state.cart[p.id]?.grams || 1;
-
+  PRODUCTS.forEach(p=>{
+    const qty = state.cart[p.id]?.qty||0;
     const card = document.createElement('div');
-    card.className='bg-bg1 border border-white/10 rounded-xl3 p-4 flex flex-col justify-between shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1';
+    card.className='bg-bg1 rounded-xl3 p-4 shadow-card flex flex-col gap-2 transition-all relative';
     card.innerHTML=`
-      <div class="flex justify-between items-start mb-3">
+      <div class="flex justify-between items-center">
         <div>
           <div class="font-black text-lg">${p.name}</div>
-          <div class="text-sm text-muted">${p.thc}% THC • ${p.origin}</div>
-          <div class="text-sm font-black mt-1">${money(p.price)} / g</div>
+          <div class="text-sm text-muted">${p.origin} • THC ${p.thc}%</div>
         </div>
-        <div class="text-sm font-black text-accent">${qty>0?qty+'×':'-'}</div>
+        <div class="text-right font-black text-lg">${money(p.price)}/g</div>
       </div>
-
-      <div class="mb-3">
-        <label for="slider-${p.id}" class="text-sm text-muted font-black">Grammes : <span id="sliderVal-${p.id}" class="text-accent">${grams}</span>g</label>
-        <input id="slider-${p.id}" type="range" min="1" max="10" value="${grams}" class="w-full h-2 bg-white/10 rounded-xl2 accent-accent">
+      <input type="range" min="1" max="100" value="${qty||1}" data-id="${p.id}" class="w-full mt-2 slider" />
+      <div class="flex justify-between items-center mt-2">
+        <span class="text-sm text-muted">Quantité: <span id="qty-${p.id}">${qty||1}</span>g</span>
+        <button data-id="${p.id}" class="px-3 py-1 rounded-xl2 bg-accent font-black text-black add-btn">Ajouter</button>
       </div>
-
-      <button data-act="add" data-id="${p.id}" class="mt-2 w-full px-3 py-2 rounded-xl2 border border-white/10 bg-accent text-black font-black hover:bg-accent2 transition">Ajouter</button>
+      <div class="absolute -top-3 right-3 text-xs bg-good px-2 py-0.5 rounded-full hidden" id="added-${p.id}">Ajouté !</div>
     `;
     catalogueEl.appendChild(card);
-
-    const slider = card.querySelector(`#slider-${p.id}`);
-    const sliderVal = card.querySelector(`#sliderVal-${p.id}`);
-    slider.addEventListener('input', e=>sliderVal.textContent=e.target.value);
   });
 }
 
 /* ==============================
-   HANDLE ACTIONS
-============================== */
-catalogueEl.addEventListener('click', e=>{
-  const btn = e.target.closest('button');
-  if(!btn) return;
-  const act = btn.dataset.act;
-  const id = btn.dataset.id;
-  if(!id) return;
-
-  const slider = document.getElementById(`slider-${id}`);
-  const grams = Number(slider?.value || 1);
-
-  if(act==='add'){
-    if(state.cart[id]){ state.cart[id].qty +=1; state.cart[id].grams = grams; }
-    else{ state.cart[id] = {qty:1, grams}; }
+   EVENT LISTENERS
+   ============================== */
+catalogueEl.addEventListener('input', e=>{
+  if(e.target.classList.contains('slider')){
+    const id=e.target.dataset.id;
+    document.getElementById(`qty-${id}`).textContent=e.target.value;
   }
-  renderDrawer();
-  updateCartBadge();
 });
 
-/* ==============================
-   SEARCH
-============================== */
-document.getElementById('search').addEventListener('input', e=>{state.query=e.target.value; renderCatalogue();});
+catalogueEl.addEventListener('click', e=>{
+  const btn = e.target.closest('.add-btn');
+  if(!btn) return;
+  const id = btn.dataset.id;
+  const slider = document.querySelector(`input[data-id='${id}']`);
+  const qty = parseInt(slider.value);
+  if(!state.cart[id]) state.cart[id]={qty:0};
+  state.cart[id].qty += qty;
+  showAdded(id);
+  renderCart();
+  updateBadge();
+});
 
-/* ==============================
-   DRAWER
-============================== */
-const drawer = document.getElementById('drawer');
-const drawerBackdrop = document.getElementById('drawerBackdrop');
-const drawerContent = document.getElementById('drawerContent');
-const drawerTotal = document.getElementById('drawerTotal');
-const cartBadge = document.getElementById('cartBadge');
-
-function renderDrawer(){
-  drawerContent.innerHTML='';
-  const items = Object.entries(state.cart);
-  if(items.length===0){ drawerContent.innerHTML='<div class="text-muted text-center">Panier vide</div>'; drawerTotal.textContent='Total : 0 €'; return; }
-
-  let total=0;
-  items.forEach(([id,{qty,grams}])=>{
-    const p = PRODUCTS.find(x=>x.id===id);
-    const lineTotal = p.price * qty * grams;
-    total += lineTotal;
-
-    const itemEl = document.createElement('div');
-    itemEl.className='flex justify-between items-center bg-bg0/20 p-3 rounded-xl2';
-    itemEl.innerHTML=`
-      <div>
-        <div class="font-black">${p.name}</div>
-        <div class="text-sm text-muted">${grams}g × ${qty}</div>
-      </div>
-      <div class="font-black">${money(lineTotal)}</div>
-    `;
-    drawerContent.appendChild(itemEl);
-  });
-
-  drawerTotal.textContent=`Total : ${money(total)}`;
+function showAdded(id){
+  const el = document.getElementById(`added-${id}`);
+  el.classList.remove('hidden');
+  setTimeout(()=>el.classList.add('hidden'),1000);
 }
 
-function updateCartBadge(){ cartBadge.textContent=totalItems(); }
+/* ==============================
+   CART DRAWER
+   ============================== */
+const cartDrawer = document.getElementById('cartDrawer');
+document.getElementById('cartBadge').addEventListener('click', ()=>cartDrawer.style.right='0');
+document.getElementById('closeCart').addEventListener('click', ()=>cartDrawer.style.right='-400px');
+
+const cartItemsEl = document.getElementById('cartItems');
+const cartTotalEl = document.getElementById('cartTotal');
+const cartCountEl = document.getElementById('cartCount');
+
+function renderCart(){
+  cartItemsEl.innerHTML='';
+  let total=0, count=0;
+  Object.entries(state.cart).forEach(([id, data])=>{
+    const p = PRODUCTS.find(x=>x.id===id);
+    if(p){
+      const lineTotal = p.price*data.qty;
+      total+=lineTotal;
+      count+=data.qty;
+      const item = document.createElement('div');
+      item.className='flex justify-between items-center mb-2';
+      item.innerHTML=`
+        <div>
+          <div class="font-black">${p.name} ${p.origin}</div>
+          <div class="text-sm text-muted">${data.qty}g • ${money(lineTotal)}</div>
+        </div>
+        <button data-id="${id}" class="text-red-500 font-black remove-btn">×</button>
+      `;
+      cartItemsEl.appendChild(item);
+    }
+  });
+  cartTotalEl.textContent=money(total);
+  cartCountEl.textContent=count;
+}
 
 /* ==============================
-   DRAWER EVENTS
-============================== */
-document.getElementById('openDrawer').addEventListener('click', ()=>{drawer.classList.remove('translate-x-full'); drawerBackdrop.classList.remove('hidden');});
-document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
-drawerBackdrop.addEventListener('click', closeDrawer);
-function closeDrawer(){ drawer.classList.add('translate-x-full'); drawerBackdrop.classList.add('hidden'); }
-
-/* ==============================
-   CLEAR / SEND ORDER
-============================== */
-document.getElementById('clearCart').addEventListener('click', ()=>{
-  state.cart={};
-  renderCatalogue();
-  renderDrawer();
-  updateCartBadge();
+   REMOVE ITEM
+   ============================== */
+cartItemsEl.addEventListener('click', e=>{
+  const btn = e.target.closest('.remove-btn');
+  if(!btn) return;
+  const id = btn.dataset.id;
+  delete state.cart[id];
+  renderCart();
 });
 
+/* ==============================
+   SEND ORDER
+   ============================== */
 document.getElementById('sendOrder').addEventListener('click', ()=>{
   const name = document.getElementById('customerName').value.trim();
-  const address = document.getElementById('customerAddress').value.trim();
-  if(!name||!address){ alert('Veuillez remplir nom et adresse'); return; }
-
-  const items = Object.entries(state.cart).map(([id,{qty,grams}])=>{
-    const p = PRODUCTS.find(x=>x.id===id);
-    return `${p.name} ${grams}g ×${qty} = ${money(p.price*qty*grams)}`;
-  }).join('\n');
-
-  const total = Object.entries(state.cart).reduce((sum,[id,{qty,grams}])=>{
-    const p = PRODUCTS.find(x=>x.id===id);
-    return sum + p.price*qty*grams;
-  },0);
-
-  const message = `Commande GIO Shop\nNom: ${name}\nAdresse: ${address}\n\n${items}\nTotal: ${money(total)}`;
-
-  // Telegram link (remplacer <USERNAME> par ton compte)
-  const telegramUrl = `https://t.me/<USERNAME>?text=${encodeURIComponent(message)}`;
-  window.open(telegramUrl,'_blank');
+  const addr = document.getElementById('deliveryAddr').value.trim();
+  if(!name||!addr){alert('Merci de renseigner nom et adresse'); return;}
+  let msg=`Commande de ${name} (${addr}):\n`;
+  Object.entries(state.cart).forEach(([id,data])=>{
+    const p=PRODUCTS.find(x=>x.id===id);
+    if(p) msg+=`- ${p.name} ${p.origin} ${data.qty}g = ${money(p.price*data.qty)}\n`;
+  });
+  msg+=`Total: ${cartTotalEl.textContent}`;
+  const telegramLink = `https://t.me/TONCOMPTE?text=${encodeURIComponent(msg)}`;
+  window.open(telegramLink,'_blank');
 });
-
+  
 /* ==============================
    INITIALIZE
-============================== */
+   ============================== */
 renderCatalogue();
-renderDrawer();
-updateCartBadge();
+renderCart();
 </script>
 </body>
 </html>
