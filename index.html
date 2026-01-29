@@ -44,7 +44,7 @@
 </header>
 
 <!-- PRODUITS -->
-<section id="catalogue" class="grid gap-3"></section>
+<section id="catalogue" class="grid gap-4"></section>
 
 <!-- PANIER FIXED BOTTOM -->
 <div id="cartBar" class="fixed bottom-0 left-0 right-0 bg-bg1 border-t border-white/10 p-3 flex items-center justify-between shadow-lg rounded-t-xl4">
@@ -81,7 +81,7 @@ const PRODUCTS = [
    ============================== */
 let state = {
   cart: loadCart(),
-  query:""
+  query: ""
 };
 
 /* ==============================
@@ -106,24 +106,28 @@ function renderCatalogue(){
   const q = state.query.toLowerCase();
   catalogueEl.innerHTML = '';
   const filtered = PRODUCTS.filter(p=>p.name.toLowerCase().includes(q)||p.origin.toLowerCase().includes(q));
-  if(filtered.length===0){
+  if(filtered.length === 0){
     catalogueEl.innerHTML='<div class="text-muted text-center">Aucun produit trouvé.</div>';
     return;
   }
-  filtered.forEach(p=>{
-    const qty = state.cart[p.id]?.weight || 100; // poids par défaut 100g
+  filtered.forEach(p => {
+    const weight = state.cart[p.id]?.weight || 1;
     const card = document.createElement('div');
     card.className='bg-bg1 border border-white/10 rounded-xl3 p-3 flex justify-between items-center';
-    card.innerHTML=`
+    card.innerHTML = `
       <div>
-        <div class="font-black">${p.name}</div>
+        <div class="font-black text-lg">${p.name}</div>
         <div class="text-sm text-muted">${p.origin}</div>
-        <div class="text-sm font-black">${money(p.price)} / 100g</div>
+        <div class="text-sm font-black mt-1">${money(p.price)} / 100g</div>
       </div>
-      <div class="flex flex-col items-end gap-1">
-        <input type="number" min="50" max="1000" step="50" value="${qty}" data-id="${p.id}" class="w-20 text-black rounded px-1 py-0.5" />
-        <button data-act="add" data-id="${p.id}" class="mt-1 px-2 py-1 rounded-xl2 border border-white/10 bg-accent text-black font-black">
-          Ajouter
+      <div class="flex flex-col items-end gap-2">
+        <div class="flex gap-1 items-center">
+          <button data-act="dec" data-id="${p.id}" class="px-2 py-1 rounded border border-white/10 bg-white/5 text-text font-black">−</button>
+          <input type="number" min="1" max="1000" step="10" value="${weight}" data-id="${p.id}" class="w-20 text-black rounded px-1 py-0.5 text-center"/>
+          <button data-act="inc" data-id="${p.id}" class="px-2 py-1 rounded border border-white/10 bg-white/5 text-text font-black">+</button>
+        </div>
+        <button data-act="add" data-id="${p.id}" class="mt-1 px-3 py-1 rounded-xl2 border border-white/10 bg-accent text-black font-black w-full">
+          Ajouter au panier
         </button>
       </div>
     `;
@@ -132,30 +136,46 @@ function renderCatalogue(){
 }
 
 /* ==============================
-   HANDLE ACTIONS
+   HANDLE BUTTONS
    ============================== */
-catalogueEl.addEventListener('click',e=>{
-  const btn=e.target.closest('button');
+catalogueEl.addEventListener('click', e => {
+  const btn = e.target.closest('button');
   if(!btn) return;
-  const act=btn.dataset.act,id=btn.dataset.id;
+  const act = btn.dataset.act, id = btn.dataset.id;
   if(!id) return;
 
   const input = catalogueEl.querySelector(`input[data-id="${id}"]`);
-  const weight = input ? parseInt(input.value) : 100;
+  let weight = input ? parseInt(input.value) : 1;
+  if(act === 'inc') weight += 10;
+  if(act === 'dec') weight -= 10;
+  weight = Math.max(1, Math.min(1000, weight));
+  if(input) input.value = weight;
 
-  if(act==='add'){
-    state.cart[id] = {weight};
-  }
+  if(act === 'add') state.cart[id] = {weight};
   saveCart();
-  renderCatalogue();
+  renderCart();
+});
+
+/* ==============================
+   HANDLE INPUT CHANGE
+   ============================== */
+catalogueEl.addEventListener('input', e=>{
+  const input = e.target.closest('input');
+  if(!input) return;
+  const id = input.dataset.id;
+  let weight = parseInt(input.value) || 1;
+  weight = Math.max(1, Math.min(1000, weight));
+  input.value = weight;
+  state.cart[id] = {weight};
+  saveCart();
   renderCart();
 });
 
 /* ==============================
    SEARCH
    ============================== */
-document.getElementById('search').addEventListener('input',e=>{
-  state.query=e.target.value;
+document.getElementById('search').addEventListener('input', e=>{
+  state.query = e.target.value;
   renderCatalogue();
 });
 
@@ -165,14 +185,17 @@ document.getElementById('search').addEventListener('input',e=>{
 const cartSummary = document.getElementById('cartSummary');
 function renderCart(){
   const items = Object.entries(state.cart);
-  if(items.length===0){cartSummary.textContent='Aucun produit'; return;}
-  let total=0;
-  const lines=[];
-  items.forEach(([id,data])=>{
+  if(items.length === 0){
+    cartSummary.textContent = 'Aucun produit';
+    return;
+  }
+  let total = 0;
+  const lines = [];
+  items.forEach(([id, data])=>{
     const p = PRODUCTS.find(x=>x.id===id);
     if(p){
       const price = p.price * (data.weight/100);
-      total+=price;
+      total += price;
       lines.push(`${p.origin} ${p.name} ×${data.weight}g = ${money(price)}`);
     }
   });
@@ -183,15 +206,15 @@ function renderCart(){
 /* ==============================
    CLEAR / COPY CART
    ============================== */
-document.getElementById('clearCart').addEventListener('click',()=>{
-  state.cart={};
+document.getElementById('clearCart').addEventListener('click', ()=>{
+  state.cart = {};
   saveCart();
   renderCatalogue();
   renderCart();
 });
 
-document.getElementById('copyCart').addEventListener('click',()=>{
-  const text = cartSummary.dataset.lines||'Panier vide';
+document.getElementById('copyCart').addEventListener('click', ()=>{
+  const text = cartSummary.dataset.lines || 'Panier vide';
   navigator.clipboard.writeText(text).then(()=>alert('Panier copié !'));
 });
 
